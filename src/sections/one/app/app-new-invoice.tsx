@@ -71,7 +71,7 @@ export default function AppNewInvoice({
           color="inherit"
           endIcon={<Iconify icon="eva:arrow-ios-forward-fill" width={18} sx={{ ml: -0.5 }} />}
         >
-          View All
+          Lihat Semua
         </Button>
       </Box>
     </Card>
@@ -110,11 +110,11 @@ function AppNewInvoiceRow({ row }: AppNewInvoiceRowProps) {
   return (
     <>
       <TableRow>
+        <TableCell>18-02-2023</TableCell>
+
         <TableCell>{row.invoiceNumber}</TableCell>
 
         <TableCell>{row.category}</TableCell>
-
-        <TableCell>{fCurrency(row.price)}</TableCell>
 
         <TableCell>
           <Label
@@ -124,10 +124,18 @@ function AppNewInvoiceRow({ row }: AppNewInvoiceRowProps) {
               (row.status === 'out of date' && 'error') ||
               'success'
             }
-          >
+            >
             {row.status}
           </Label>
         </TableCell>
+
+        <TableCell>{fCurrency(row.price)}</TableCell>
+
+        <TableCell>{fCurrency(row.price)}</TableCell>
+        
+        <TableCell>{fCurrency(row.price)}</TableCell>
+
+        <TableCell>{fCurrency(row.price)}</TableCell>
 
         <TableCell align="right" sx={{ pr: 1 }}>
           <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>

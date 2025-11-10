@@ -68,9 +68,9 @@ export default function Header({ onOpenNav }: Props) {
 
         <NotificationsPopover />
 
-        <ContactsPopover />
+        <ContactsPopover /> */}
 
-        <SettingsButton /> */}
+        <SettingsButton />
 
         <AccountPopover />
       </Stack>

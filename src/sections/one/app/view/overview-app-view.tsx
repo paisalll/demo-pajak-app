@@ -29,9 +29,9 @@ export default function OverviewAppView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       <Grid container spacing={3}>
-        <Grid xs={12} md={4}>
+        <Grid xs={12} md={3}>
           <AppWidgetSummary
-            title="Total Active Users"
+            title="Total Pembelian"
             percent={2.6}
             total={18765}
             chart={{
@@ -40,9 +40,9 @@ export default function OverviewAppView() {
           />
         </Grid>
 
-        <Grid xs={12} md={4}>
+        <Grid xs={12} md={3}>
           <AppWidgetSummary
-            title="Total Installed"
+            title="Total Penjualan"
             percent={0.2}
             total={4876}
             chart={{
@@ -52,9 +52,21 @@ export default function OverviewAppView() {
           />
         </Grid>
 
-        <Grid xs={12} md={4}>
+        <Grid xs={12} md={3}>
           <AppWidgetSummary
-            title="Total Downloads"
+            title="Total Pajak"
+            percent={0.2}
+            total={4876}
+            chart={{
+              colors: [theme.palette.info.light, theme.palette.info.main],
+              series: [20, 41, 63, 33, 28, 35, 50, 46, 11, 26],
+            }}
+          />
+        </Grid>
+
+        <Grid xs={12} md={3}>
+          <AppWidgetSummary
+            title="Total Transaksi"
             percent={-0.1}
             total={678}
             chart={{
@@ -69,41 +81,19 @@ export default function OverviewAppView() {
             title="New Invoice"
             tableData={_appInvoices}
             tableLabels={[
-              { id: 'id', label: 'Invoice ID' },
-              { id: 'category', label: 'Category' },
-              { id: 'price', label: 'Price' },
-              { id: 'status', label: 'Status' },
+              { id: 'tanggal', label: 'Tanggal' },
+              { id: 'no_invoice', label: 'No. Invoice' },
+              { id: 'akun', label: 'Akun' },
+              { id: 'coa', label: 'COA' },
+              { id: 'pembelian', label: 'Pembelian' },
+              { id: 'penjualan', label: 'Penjualan' },
+              { id: 'nominal', label: 'Nominal' },
+              { id: 'pajak', label: 'Pajak' },
               { id: '' },
             ]}
           />
         </Grid>
 
-        <Grid xs={12} md={6} lg={4}>
-          <AppTopAuthors title="Top Authors" list={_appAuthors} />
-        </Grid>
-
-        <Grid xs={12} md={6} lg={4}>
-          <Stack spacing={3}>
-            <AppWidget
-              title="Conversion"
-              total={38566}
-              icon="solar:user-rounded-bold"
-              chart={{
-                series: 48,
-              }}
-            />
-
-            <AppWidget
-              title="Applications"
-              total={55566}
-              icon="fluent:mail-24-filled"
-              color="info"
-              chart={{
-                series: 75,
-              }}
-            />
-          </Stack>
-        </Grid>
       </Grid>
     </Container>
   );

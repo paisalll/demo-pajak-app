@@ -52,32 +52,15 @@ export function useNavData() {
         subheader: 'overview Dashboard',
         items: [
           { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
-          { title: 'Menu ....', path: paths.dashboard.two, icon: ICONS.ecommerce },
+          { title: 'Input', path: paths.dashboard.two, icon: ICONS.order },
           {
-            title: 'Menu ....',
+            title: 'Laporan',
             path: paths.dashboard.three,
             icon: ICONS.analytics,
           },
         ],
       },
 
-      // MANAGEMENT
-      // ----------------------------------------------------------------------
-      {
-        subheader: 'Section ....',
-        items: [
-          {
-            title: 'Menu ....',
-            path: paths.dashboard.group.root,
-            icon: ICONS.user,
-            children: [
-              { title: 'Menu ....', path: paths.dashboard.group.root },
-              { title: 'Menu ....', path: paths.dashboard.group.five },
-              { title: 'Menu ....', path: paths.dashboard.group.six },
-            ],
-          },
-        ],
-      },
     ],
     []
   );
