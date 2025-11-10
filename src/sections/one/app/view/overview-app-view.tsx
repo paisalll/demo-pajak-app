@@ -11,18 +11,11 @@ import { _appFeatured, _appAuthors, _appInstalled, _appRelated, _appInvoices } f
 // components
 import { useSettingsContext } from 'src/components/settings';
 // assets
-import { SeoIllustration } from 'src/assets/illustrations';
 //
 import AppWidget from '../app-widget';
-import AppWelcome from '../app-welcome';
-import AppFeatured from '../app-featured';
 import AppNewInvoice from '../app-new-invoice';
 import AppTopAuthors from '../app-top-authors';
-import AppTopRelated from '../app-top-related';
-import AppAreaInstalled from '../app-area-installed';
 import AppWidgetSummary from '../app-widget-summary';
-import AppCurrentDownload from '../app-current-download';
-import AppTopInstalledCountries from '../app-top-installed-countries';
 
 // ----------------------------------------------------------------------
 

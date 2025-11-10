@@ -33,14 +33,14 @@ export default function AppWidgetSummary({ title, percent, total, chart, sx, ...
     options,
   } = chart;
 
-  const chartOptions = {
-    colors: colors.map((colr) => colr[1]),
+  const chartOptions: ApexOptions = {
+    colors: colors,
     fill: {
       type: 'gradient',
       gradient: {
         colorStops: [
-          { offset: 0, color: colors[0] },
-          { offset: 100, color: colors[1] },
+          { offset: 0, color: colors[0], opacity: 1 },
+          { offset: 100, color: colors[1], opacity: 1 },
         ],
       },
     },
@@ -100,7 +100,7 @@ export default function AppWidgetSummary({ title, percent, total, chart, sx, ...
         <Typography variant="h3">{fNumber(total)}</Typography>
       </Box>
 
-      <Chart type="bar" series={[{ data: series }]} options={chartOptions} width={60} height={36} />
+      {/* <Chart type="bar" series={[{ data: series }]} options={chartOptions} width={60} height={36} /> */}
     </Card>
   );
 }

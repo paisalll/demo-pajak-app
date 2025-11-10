@@ -49,12 +49,7 @@ export default function AppWidget({
     },
     fill: {
       type: 'gradient',
-      gradient: {
-        colorStops: [
-          { offset: 0, color: theme.palette[color].light },
-          { offset: 100, color: theme.palette[color].main },
-        ],
-      },
+
     },
     plotOptions: {
       radialBar: {
