@@ -49,12 +49,12 @@ export function useNavData() {
       // OVERVIEW
       // ----------------------------------------------------------------------
       {
-        subheader: 'overview v5.5.0',
+        subheader: 'overview Dashboard',
         items: [
-          { title: 'one', path: paths.dashboard.root, icon: ICONS.dashboard },
-          { title: 'two', path: paths.dashboard.two, icon: ICONS.ecommerce },
+          { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
+          { title: 'Menu ....', path: paths.dashboard.two, icon: ICONS.ecommerce },
           {
-            title: 'three',
+            title: 'Menu ....',
             path: paths.dashboard.three,
             icon: ICONS.analytics,
           },
@@ -64,16 +64,16 @@ export function useNavData() {
       // MANAGEMENT
       // ----------------------------------------------------------------------
       {
-        subheader: 'management',
+        subheader: 'Section ....',
         items: [
           {
-            title: 'user',
+            title: 'Menu ....',
             path: paths.dashboard.group.root,
             icon: ICONS.user,
             children: [
-              { title: 'four', path: paths.dashboard.group.root },
-              { title: 'five', path: paths.dashboard.group.five },
-              { title: 'six', path: paths.dashboard.group.six },
+              { title: 'Menu ....', path: paths.dashboard.group.root },
+              { title: 'Menu ....', path: paths.dashboard.group.five },
+              { title: 'Menu ....', path: paths.dashboard.group.six },
             ],
           },
         ],
