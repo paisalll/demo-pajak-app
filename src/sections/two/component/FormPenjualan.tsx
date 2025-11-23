@@ -162,26 +162,19 @@ export default function FormPenjualan() {
         </Grid>
 
         {/* Baris 3: Akun */}
-        <Grid item xs={12} md={4}>
-          <RHFAutocomplete
-              name="coa"
-              label="COA"
-              options={COA_OPTIONS}
-            />
-        </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={6}>
           <RHFAutocomplete
             name="akunDebit"
             label="Akun Debit *"
-            options={AKUN_DEBIT_OPTIONS}
+            options={COA_OPTIONS}
           />
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={6}>
           <RHFAutocomplete
             name="akunKredit"
             label="Akun Kredit *"
-            options={AKUN_KREDIT_OPTIONS}
+            options={COA_OPTIONS}
           />
         </Grid>
 
@@ -238,18 +231,29 @@ export default function FormPenjualan() {
                     <Typography variant="caption" display="block" color="text.secondary">PPh Amount</Typography>
                     <Typography variant="subtitle1" color="error.main" fontWeight="bold">- {formatCurrency(pphAmount || 0)}</Typography>
                 </Box>
-                <Box>
-                    <Typography variant="caption" display="block" color="text.secondary">COA</Typography>
-                    <Typography variant="subtitle1" color="success.main" fontWeight="bold">
-                      { ppnAmount && pphAmount && ppnAmount > 0 && pphAmount > 0
-                        ? 'Hutang PPn'
-                        : pphAmount && pphAmount > 0 ? 'Hutang Dibayar Dimuka' : ' - '}
-                    </Typography>
-                </Box>
                  <Box sx={{textAlign: 'right'}}>
                     <Typography variant="caption" display="block" color="text.secondary">Subtotal Barang</Typography>
                     <Typography variant="subtitle1" fontWeight="bold">{formatCurrency(subtotal || 0)}</Typography>
                 </Box>
+            </Stack>
+        </Grid>
+        <Grid item xs={12}>
+            <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, p: 2, bgcolor: '#f9fafb', borderRadius: 1 }}>
+                <Box>
+                    <Typography variant="caption" display="block" color="text.secondary">PPn</Typography>
+                    <Typography variant="subtitle1" color="success.main" fontWeight="bold">
+                      { ppnAmount &&  ppnAmount > 0 
+                        ? 'Hutang PPn'
+                        :  ' - '}
+                    </Typography>
+                </Box>
+                 <Box>
+                    <Typography variant="caption" display="block" color="text.secondary">PPh</Typography>
+                    <Typography variant="subtitle1" color="error.main" fontWeight="bold">
+                      { pphAmount && pphAmount > 0 ? 'Hutang Dibayar Dimuka' : ' - '}
+                    </Typography>
+                </Box>
+                <Box></Box>
             </Stack>
         </Grid>
       </Grid>

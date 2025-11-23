@@ -199,25 +199,18 @@ export default function FormPembelian() {
         </Grid>
 
         {/* Baris 3: Akun (COA) */}
-        <Grid item xs={12} md={4}>
-            <RHFAutocomplete
-                name="coa"
-                label="COA"
-                options={COA_OPTIONS}
-              />
-        </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={6}>
           <RHFAutocomplete
             name="akunDebit"
             label="Akun Debit *"
-            options={AKUN_DEBIT_OPTIONS}
+            options={COA_OPTIONS}
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={6}>
           <RHFAutocomplete
             name="akunKredit"
             label="Akun Kredit *"
-            options={AKUN_KREDIT_OPTIONS}
+            options={COA_OPTIONS}
           />
         </Grid>
 

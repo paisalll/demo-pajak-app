@@ -299,5 +299,4 @@ export const PAJAK_PPH_OPTIONS = [
   { value: 2, label: '2% (Ayat 23)' },
   { value: 5, label: '5% (Ayat 21)' },
   { value: 10, label: '10% (4 Ayat 2)' },
-  { value: 0, label: '0%' },
 ];
