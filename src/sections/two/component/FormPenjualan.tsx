@@ -226,34 +226,23 @@ export default function FormPenjualan() {
                 <Box>
                     <Typography variant="caption" display="block" color="text.secondary">PPN Amount</Typography>
                     <Typography variant="subtitle1" color="primary.main" fontWeight="bold">+ {formatCurrency(ppnAmount || 0)}</Typography>
-                </Box>
-                <Box>
-                    <Typography variant="caption" display="block" color="text.secondary">PPh Amount</Typography>
-                    <Typography variant="subtitle1" color="error.main" fontWeight="bold">- {formatCurrency(pphAmount || 0)}</Typography>
-                </Box>
-                 <Box sx={{textAlign: 'right'}}>
-                    <Typography variant="caption" display="block" color="text.secondary">Subtotal Barang</Typography>
-                    <Typography variant="subtitle1" fontWeight="bold">{formatCurrency(subtotal || 0)}</Typography>
-                </Box>
-            </Stack>
-        </Grid>
-        <Grid item xs={12}>
-            <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, p: 2, bgcolor: '#f9fafb', borderRadius: 1 }}>
-                <Box>
-                    <Typography variant="caption" display="block" color="text.secondary">PPn</Typography>
                     <Typography variant="subtitle1" color="success.main" fontWeight="bold">
                       { ppnAmount &&  ppnAmount > 0 
                         ? 'Hutang PPn'
                         :  ' - '}
                     </Typography>
                 </Box>
-                 <Box>
-                    <Typography variant="caption" display="block" color="text.secondary">PPh</Typography>
+                <Box>
+                    <Typography variant="caption" display="block" color="text.secondary">PPh Amount</Typography>
+                    <Typography variant="subtitle1" color="error.main" fontWeight="bold">- {formatCurrency(pphAmount || 0)}</Typography>
                     <Typography variant="subtitle1" color="error.main" fontWeight="bold">
                       { pphAmount && pphAmount > 0 ? 'Hutang Dibayar Dimuka' : ' - '}
                     </Typography>
                 </Box>
-                <Box></Box>
+                 <Box sx={{textAlign: 'right'}}>
+                    <Typography variant="caption" display="block" color="text.secondary">Subtotal Barang</Typography>
+                    <Typography variant="subtitle1" fontWeight="bold">{formatCurrency(subtotal || 0)}</Typography>
+                </Box>
             </Stack>
         </Grid>
       </Grid>
