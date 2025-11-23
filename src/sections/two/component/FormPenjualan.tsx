@@ -7,40 +7,9 @@ import * as Yup from 'yup';
 import { Grid, Stack, Button, MenuItem, Box, Typography, InputAdornment, Autocomplete, TextField, Dialog, DialogTitle, DialogActions, DialogContent } from '@mui/material';
 import FormProvider from '../../../components/hook-form/form-provider';
 import RHFTextField from '../../../components/hook-form/rhf-text-field';
+import RHFAutocomplete from 'src/components/hook-form/rhf-auto-complete';
+import {COA_OPTIONS, INITIAL_CUSTOMERS, AKUN_DEBIT_OPTIONS, AKUN_KREDIT_OPTIONS, PAJAK_PPN_OPTIONS, PAJAK_PPH_OPTIONS} from './utils';
 
-  const INITIAL_CUSTOMERS = [
-  { label: 'PT Maju Jaya', value: 'PT Maju Jaya' },
-  { label: 'CV Sejahtera', value: 'CV Sejahtera' },
-  { label: 'Toko Rakyat', value: 'Toko Rakyat' },
-];
-
-const COA_OPTIONS = [
-  { value: '1101', label: '1101 - Kas Besar' },
-  { value: '1102', label: '1102 - Rekening Bank' },
-  { value: '4001', label: '4001 - Pendapatan Jasa' },
-];
-
-const AKUN_DEBIT_OPTIONS = [
-    { value: '1101', label: 'Kas' },
-    { value: '1102', label: 'Bank BCA' },
-    { value: '1103', label: 'Piutang Usaha' },
-];
-
-const AKUN_KREDIT_OPTIONS = [
-    { value: '4001', label: 'Penjualan Barang' },
-    { value: '4002', label: 'Pendapatan Jasa' },
-];
-
-const PAJAK_PPN_OPTIONS = [
-  { value: 11, label: '11% (Standar)' },
-  { value: 1.1, label: '1.1% (Final)' },
-  { value: 0, label: '0% (Non-PPN)' },
-];
-
-const PAJAK_PPH_OPTIONS = [
-  { value: 2, label: '2% (PPh 23)' },
-  { value: 0, label: '0%' },
-];
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
@@ -183,77 +152,37 @@ export default function FormPenjualan() {
           <RHFTextField name="noInvoice" label="No. Invoice" placeholder="Masukkan nomor invoice" required/>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Controller
+          <RHFAutocomplete
             name="customer"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <Autocomplete
-                {...field}
-                options={customers}
-                getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
-                isOptionEqualToValue={(option, value) =>
-                  typeof value === 'string' ? option.value === value : option.value === value?.value
-                }
-                onChange={(_, newValue) => {
-                  if (newValue && typeof newValue === 'object' && newValue.value === 'ADD_NEW') {
-                     return;
-                  }
-                  field.onChange(newValue ? newValue.value : '');
-                }}
-                renderOption={(props, option) => (
-                    <li {...props} key={option.value}>
-                        {option.label}
-                    </li>
-                )}
-                ListboxProps={{
-                    style: { maxHeight: 200 },
-                }}
-                PaperComponent={({ children, ...otherProps }) => (
-                    <Box {...otherProps} sx={{ bgcolor: 'background.paper', borderRadius: 1, boxShadow: 3 }}>
-                        {children}
-                        <Box 
-                            sx={{ p: 1, borderTop: '1px solid #eee', cursor: 'pointer', color: 'primary.main', fontWeight: 'bold' }}
-                            onMouseDown={(e) => e.preventDefault()} // Mencegah blur
-                            onClick={() => setOpenAddCustomer(true)}
-                        >
-                            + Tambah Customer Baru
-                        </Box>
-                    </Box>
-                )}
-                value={customers.find((v) => v.value === field.value) || null}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Vendor/Customer"
-                    placeholder="Pilih atau tambah vendor..."
-                    error={!!error}
-                    required
-                    helperText={error?.message}
-                  />
-                )}
-              />
-            )}
+            label="Vendor/Customer *"
+            options={customers}
+            onAddNew={() => setOpenAddCustomer(true)} // Menyalakan fitur tambah baru
+            addNewLabel="Tambah Customer Baru"
           />
         </Grid>
 
         {/* Baris 3: Akun */}
         <Grid item xs={12} md={4}>
-          <RHFTextField select name="coa" label="COA">
-            <MenuItem value="" disabled>Pilih COA...</MenuItem>
-            {COA_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
-          </RHFTextField>
+          <RHFAutocomplete
+              name="coa"
+              label="COA"
+              options={COA_OPTIONS}
+            />
         </Grid>
         <Grid item xs={12} md={4}>
-          <RHFTextField select name="akunDebit" label="Akun Debit *">
-            <MenuItem value="" disabled>Pilih Akun Debit...</MenuItem>
-            {AKUN_DEBIT_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
-          </RHFTextField>
+          <RHFAutocomplete
+            name="akunDebit"
+            label="Akun Debit *"
+            options={AKUN_DEBIT_OPTIONS}
+          />
         </Grid>
+
         <Grid item xs={12} md={4}>
-          <RHFTextField select name="akunKredit" label="Akun Kredit *">
-            <MenuItem value="" disabled>Pilih Akun Kredit...</MenuItem>
-            {AKUN_KREDIT_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
-          </RHFTextField>
+          <RHFAutocomplete
+            name="akunKredit"
+            label="Akun Kredit *"
+            options={AKUN_KREDIT_OPTIONS}
+          />
         </Grid>
 
         {/* Baris 4: Detail Item */}
@@ -308,6 +237,14 @@ export default function FormPenjualan() {
                 <Box>
                     <Typography variant="caption" display="block" color="text.secondary">PPh Amount</Typography>
                     <Typography variant="subtitle1" color="error.main" fontWeight="bold">- {formatCurrency(pphAmount || 0)}</Typography>
+                </Box>
+                <Box>
+                    <Typography variant="caption" display="block" color="text.secondary">COA</Typography>
+                    <Typography variant="subtitle1" color="success.main" fontWeight="bold">
+                      { ppnAmount && pphAmount && ppnAmount > 0 && pphAmount > 0
+                        ? 'Hutang PPn'
+                        : pphAmount && pphAmount > 0 ? 'Hutang Dibayar Dimuka' : ' - '}
+                    </Typography>
                 </Box>
                  <Box sx={{textAlign: 'right'}}>
                     <Typography variant="caption" display="block" color="text.secondary">Subtotal Barang</Typography>

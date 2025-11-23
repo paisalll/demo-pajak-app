@@ -46,17 +46,54 @@ export const _appAuthors = [...Array(3)].map((_, index) => ({
   totalFavorites: _mock.number.nativeL(index),
 }));
 
-export const _appInvoices = [...Array(5)].map((_, index) => {
-  const category = ['Android', 'Mac', 'Windows', 'Android', 'Mac'][index];
+// ----------------------------------------------------------------------
 
-  const status = ['paid', 'out of date', 'progress', 'paid', 'paid'][index];
+export const _appInvoices = [...Array(5)].map((_, index) => {
+  // Pilihan Sample COA
+  const coaSamples = [
+    '4-1000 Penjualan Barang', 
+    '5-1000 Pembelian Bahan Baku', 
+    '4-1100 Pendapatan Jasa', 
+    '5-2000 Beban Sewa', 
+    '1-1200 Piutang Usaha'
+  ];
+
+  // Menentukan ini transaksi Pembelian atau Penjualan (berguna untuk filter Tabs nanti)
+  const isSales = index % 2 === 0; 
+  const transactionType = isSales ? 'Penjualan' : 'Pembelian';
+  
+  // Harga dasar
+  const price = index + 5 * 20000;
 
   return {
     id: _mock.id(index),
+    
+    // 1. Sesuai label 'No. Invoice'
     invoiceNumber: `INV-199${index}`,
-    price: _mock.number.price(index),
-    category,
-    status,
+    
+    // 2. Sesuai label 'Tanggal' (menggunakan mock time/date)
+    createDate: _mock.time(index),
+    
+    // 3. Sesuai label 'Akun' (Nama Vendor atau Pelanggan)
+    invoiceTo: {
+      id: _mock.id(index),
+      name: _mock.fullName(index),
+    },
+
+    // 4. Sesuai label 'COA'
+    coa: coaSamples[index],
+
+    // 5. Helper untuk label 'Pembelian' / 'Penjualan' (Jenis Transaksi)
+    type: transactionType,
+
+    // 6. Sesuai label 'Nominal'
+    price: price,
+
+    // 7. Sesuai label 'Pajak' (Simulasi 11% dari harga)
+    taxes: price * 0.11,
+
+    // Status (Opsional, untuk warna label jika dibutuhkan)
+    status: ['paid', 'out of date', 'progress', 'paid', 'paid'][index],
   };
 });
 

@@ -9,9 +9,14 @@ export function fNumber(number: InputValue) {
 }
 
 export function fCurrency(number: InputValue) {
-  const format = number ? numeral(number).format('$0,0.00') : '';
+  if (!number) return '';
 
-  return result(format, '.00');
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0, // Ubah ke 2 jika ingin menampilkan sen (,00)
+    maximumFractionDigits: 0, // Batas desimal
+  }).format(Number(number));
 }
 
 export function fPercent(number: InputValue) {

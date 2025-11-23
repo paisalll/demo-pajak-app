@@ -13,6 +13,7 @@ import Card, { CardProps } from '@mui/material/Card';
 import TableContainer from '@mui/material/TableContainer';
 // utils
 import { fCurrency } from 'src/utils/format-number';
+import { fDate } from 'src/utils/format-time';
 // components
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -24,10 +25,15 @@ import { TableHeadCustom } from 'src/components/table';
 
 type RowProps = {
   id: string;
-  price: number;
-  status: string;
-  category: string;
   invoiceNumber: string;
+  createDate: Date | string | number;
+  price: number;
+  coa: string;
+  invoiceTo: {
+    name: string;
+  };
+  taxes?: number;
+  status: string;
 };
 
 interface Props extends CardProps {
@@ -35,6 +41,7 @@ interface Props extends CardProps {
   subheader?: string;
   tableData: RowProps[];
   tableLabels: any;
+  onViewDetail?: (id: string) => void; 
 }
 
 export default function AppNewInvoice({
@@ -42,21 +49,26 @@ export default function AppNewInvoice({
   subheader,
   tableData,
   tableLabels,
+  onViewDetail,
   ...other
 }: Props) {
   return (
     <Card {...other}>
-      <CardHeader title={title} subheader={subheader} sx={{ mb: 3 }} />
+      {title && <CardHeader title={title} subheader={subheader} sx={{ mb: 3 }} />}
 
-      <Button sx={{ mb: 2, ml: 2 }} variant="contained" color="primary">Export CSV</Button>
       <TableContainer sx={{ overflow: 'unset' }}>
         <Scrollbar>
-          <Table sx={{ minWidth: 680 }}>
+          <Table sx={{ minWidth: 720 }}>
             <TableHeadCustom headLabel={tableLabels} />
 
             <TableBody>
               {tableData.map((row) => (
-                <AppNewInvoiceRow key={row.id} row={row} />
+                <AppNewInvoiceRow 
+                    key={row.id} 
+                    row={row} 
+                    // TAMBAHAN 2: Teruskan fungsi ke Row
+                    onViewRow={() => onViewDetail && onViewDetail(row.id)}
+                />
               ))}
             </TableBody>
           </Table>
@@ -82,24 +94,17 @@ export default function AppNewInvoice({
 
 type AppNewInvoiceRowProps = {
   row: RowProps;
+  // TAMBAHAN 3: Definisi tipe prop di Row
+  onViewRow: VoidFunction; 
 };
 
-function AppNewInvoiceRow({ row }: AppNewInvoiceRowProps) {
+function AppNewInvoiceRow({ row, onViewRow }: AppNewInvoiceRowProps) {
   const popover = usePopover();
 
-  const handleDownload = () => {
+  // TAMBAHAN 4: Fungsi Handler Klik Detail
+  const handleViewDetail = () => {
     popover.onClose();
-    console.info('DOWNLOAD', row.id);
-  };
-
-  const handlePrint = () => {
-    popover.onClose();
-    console.info('PRINT', row.id);
-  };
-
-  const handleShare = () => {
-    popover.onClose();
-    console.info('SHARE', row.id);
+    onViewRow(); // Panggil fungsi dari parent
   };
 
   const handleDelete = () => {
@@ -107,36 +112,18 @@ function AppNewInvoiceRow({ row }: AppNewInvoiceRowProps) {
     console.info('DELETE', row.id);
   };
 
+  const taxAmount = row.taxes || row.price * 0.11;
+
   return (
     <>
       <TableRow>
-        <TableCell>18-02-2023</TableCell>
-
+        <TableCell>{fDate(row.createDate)}</TableCell>
         <TableCell>{row.invoiceNumber}</TableCell>
-
-        <TableCell>{row.category}</TableCell>
-
-        <TableCell>
-          <Label
-            variant="soft"
-            color={
-              (row.status === 'progress' && 'warning') ||
-              (row.status === 'out of date' && 'error') ||
-              'success'
-            }
-            >
-            {row.status}
-          </Label>
-        </TableCell>
-
+        <TableCell>{row.invoiceTo.name}</TableCell>
+        <TableCell>{row.coa}</TableCell>
         <TableCell>{fCurrency(row.price)}</TableCell>
-
-        <TableCell>{fCurrency(row.price)}</TableCell>
+        <TableCell sx={{ color: 'text.secondary' }}>{fCurrency(taxAmount)}</TableCell>
         
-        <TableCell>{fCurrency(row.price)}</TableCell>
-
-        <TableCell>{fCurrency(row.price)}</TableCell>
-
         <TableCell align="right" sx={{ pr: 1 }}>
           <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
@@ -150,22 +137,11 @@ function AppNewInvoiceRow({ row }: AppNewInvoiceRowProps) {
         arrow="right-top"
         sx={{ width: 160 }}
       >
-        <MenuItem onClick={handleDownload}>
-          <Iconify icon="eva:cloud-download-fill" />
-          Download
+        {/* Update tombol Detail untuk memanggil handleViewDetail */}
+        <MenuItem onClick={handleViewDetail}>
+          <Iconify icon="solar:round-graph-bold" />
+          Detail
         </MenuItem>
-
-        <MenuItem onClick={handlePrint}>
-          <Iconify icon="solar:printer-minimalistic-bold" />
-          Print
-        </MenuItem>
-
-        <MenuItem onClick={handleShare}>
-          <Iconify icon="solar:share-bold" />
-          Share
-        </MenuItem>
-
-        <Divider sx={{ borderStyle: 'dashed' }} />
 
         <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
           <Iconify icon="solar:trash-bin-trash-bold" />

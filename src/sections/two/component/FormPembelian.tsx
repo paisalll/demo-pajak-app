@@ -1,74 +1,62 @@
 import React, { useEffect, useState } from 'react';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 
 // @mui Material components
-import { Grid, Stack, Button, MenuItem, Box, Typography, InputAdornment, Autocomplete, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { 
+  Grid, Stack, Button, MenuItem, Box, Typography, 
+  InputAdornment, TextField, Dialog, DialogTitle, 
+  DialogContent, DialogActions 
+} from '@mui/material';
+
+// Components
 import FormProvider from '../../../components/hook-form/form-provider';
 import RHFTextField from '../../../components/hook-form/rhf-text-field';
+import RHFAutocomplete from 'src/components/hook-form/rhf-auto-complete';
+
+// Utils
+import {
+  COA_OPTIONS, 
+  INITIAL_CUSTOMERS, 
+  AKUN_DEBIT_OPTIONS, 
+  AKUN_KREDIT_OPTIONS, 
+  PAJAK_PPN_OPTIONS, 
+  PAJAK_PPH_OPTIONS
+} from './utils';
 
 // ----------------------------------------------------------------------
 
-const INITIAL_VENDORS = [
-  { label: 'PT Maju Jaya', value: 'PT Maju Jaya' },
-  { label: 'CV Sejahtera', value: 'CV Sejahtera' },
-  { label: 'Toko Rakyat', value: 'Toko Rakyat' },
-];
-
-const COA_OPTIONS = [
-  { value: '5001', label: '5001 - Biaya Pembelian' },
-  { value: '1101', label: '1101 - Kas Besar' },
-];
-
-const AKUN_DEBIT_OPTIONS = [
-    { value: '5001', label: 'Pembelian Barang' },
-    { value: '1104', label: 'Perlengkapan Kantor' },
-];
-
-const AKUN_KREDIT_OPTIONS = [
-    { value: '1101', label: 'Kas' },
-    { value: '2101', label: 'Hutang Usaha' },
-];
-
-const PAJAK_PPN_OPTIONS = [
-  { value: 11, label: '11% (Standar)' },
-  { value: 0, label: '0% (Non-PPN)' },
-];
-
-const PAJAK_PPH_OPTIONS = [
-  { value: 2, label: '2% (PPh 23)' },
-  { value: 0, label: '0%' },
-];
-
 const getTodayDate = () => new Date().toISOString().split('T')[0];
+const formatCurrency = (val: number) => 
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
 
 // ----------------------------------------------------------------------
 
 export default function FormPembelian() {
-  const [vendors, setVendors] = useState(INITIAL_VENDORS);
+  const [vendors, setVendors] = useState(INITIAL_CUSTOMERS);
   const [openAddVendor, setOpenAddVendor] = useState(false);
   const [newVendorName, setNewVendorName] = useState('');
   
-  type FormValues = {
+  interface PurchaseFormValues {
     tanggalPencatatan: string;
     tanggalInvoice: string;
     tanggalJatuhTempo: string;
     noFaktur: string;
     noInvoice: string;
     vendor: string;
-    coa: string;
+    coa?: string;
     akunDebit: string;
     akunKredit: string;
     qty: number;
     hargaSatuan: number;
     persentasePPN: number;
     persentasePPh: number;
-    subtotal: number;
-    ppnAmount: number;
-    pphAmount: number;
-    totalAkhir: number;
-  };
+    subtotal?: number;
+    ppnAmount?: number;
+    pphAmount?: number;
+    totalAkhir?: number;
+  }
 
   const PurchaseFormSchema = Yup.object().shape({
     tanggalPencatatan: Yup.string().required('Tanggal wajib diisi'),
@@ -84,9 +72,13 @@ export default function FormPembelian() {
     hargaSatuan: Yup.number().min(0, 'Minimal 0').required('Wajib diisi'),
     persentasePPN: Yup.number().required('PPN wajib dipilih'),
     persentasePPh: Yup.number().required('PPh wajib dipilih'),
+    subtotal: Yup.number(),
+    ppnAmount: Yup.number(),
+    pphAmount: Yup.number(),
+    totalAkhir: Yup.number(),
   });
 
-  const defaultValues: FormValues = {
+  const defaultValues: PurchaseFormValues = {
     tanggalPencatatan: getTodayDate(),
     tanggalInvoice: getTodayDate(),
     tanggalJatuhTempo: getTodayDate(),
@@ -106,8 +98,8 @@ export default function FormPembelian() {
     totalAkhir: 0,
   };
 
-  const methods = useForm<FormValues>({
-    resolver: yupResolver(PurchaseFormSchema) as unknown as any,
+  const methods = useForm<PurchaseFormValues>({
+    resolver: yupResolver<PurchaseFormValues>(PurchaseFormSchema),
     defaultValues,
   });
 
@@ -119,11 +111,13 @@ export default function FormPembelian() {
     formState: { isSubmitting },
   } = methods;
 
+  // Watch nilai untuk kalkulasi realtime
   const values = useWatch({
     control,
     name: ['qty', 'hargaSatuan', 'persentasePPN', 'persentasePPh'],
   });
 
+  // Logic Kalkulasi
   useEffect(() => {
     const [qty, hargaSatuan, ppn, pph] = values;
     
@@ -140,13 +134,14 @@ export default function FormPembelian() {
     setValue('totalAkhir', totalAkhir);
   }, [values, setValue]);
 
+  // Logic Tambah Vendor Baru
   const handleAddNewVendor = () => {
     if (newVendorName.trim() !== '') {
       const newOption = { label: newVendorName, value: newVendorName };
       setVendors((prev) => [...prev, newOption]);
-      setValue('vendor', newVendorName); // Set nilai form ke vendor baru
+      setValue('vendor', newVendorName); 
       setNewVendorName('');
-      setOpenAddVendor(!openAddVendor);
+      setOpenAddVendor(false);
     }
   };
 
@@ -154,16 +149,14 @@ export default function FormPembelian() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
       console.log('DATA PEMBELIAN:', data);
-      alert(`Data Pembelian Tersimpan!\nTotal: Rp ${data.totalAkhir.toLocaleString('id-ID')}`);
+      alert(`Data Pembelian Tersimpan!\nTotal: ${formatCurrency(data.totalAkhir)}`);
       reset();
     } catch (error) {
       console.error(error);
     }
   };
 
-  const formatCurrency = (val: number) => 
-    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
-
+  // Ambil nilai hasil kalkulasi untuk ditampilkan di UI
   const { subtotal, ppnAmount, pphAmount, totalAkhir } = useWatch({ control });
 
   return (
@@ -187,88 +180,48 @@ export default function FormPembelian() {
           <RHFTextField name="tanggalJatuhTempo" label="Tanggal Jatuh Tempo *" type="date" InputLabelProps={{ shrink: true }} />
         </Grid>
 
-        {/* Baris 2: Identitas */}
+        {/* Baris 2: Identitas & Vendor */}
         <Grid item xs={12} md={4}>
-          <RHFTextField name="noFaktur" label="No. Faktur" placeholder="Masukkan nomor faktur" required />
+          <RHFTextField name="noFaktur" label="No. Faktur" placeholder="Masukkan nomor faktur" />
         </Grid>
         <Grid item xs={12} md={4}>
-          <RHFTextField name="noInvoice" label="No. Invoice" placeholder="Masukkan nomor invoice" required />
+          <RHFTextField name="noInvoice" label="No. Invoice" placeholder="Masukkan nomor invoice" />
         </Grid>
         <Grid item xs={12} md={4}>
-          <Controller
+          {/* MENGGUNAKAN RHFAutocomplete AGAR LEBIH RAPI */}
+          <RHFAutocomplete
             name="vendor"
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <Autocomplete
-                {...field}
-                options={vendors}
-                getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
-                isOptionEqualToValue={(option, value) => {
-                  const comparedValue = (value as any)?.value ?? value;
-                  return option.value === comparedValue;
-                }}
-                onChange={(_, newValue) => {
-                  if (newValue && typeof newValue === 'object' && newValue.value === 'ADD_NEW') {
-                     return;
-                  }
-                  field.onChange(newValue ? newValue.value : '');
-                }}
-                renderOption={(props, option) => (
-                    <li {...props} key={option.value}>
-                        {option.label}
-                    </li>
-                )}
-                ListboxProps={{
-                    style: { maxHeight: 200 },
-                }}
-                PaperComponent={({ children, ...otherProps }) => (
-                    <Box {...otherProps} sx={{ bgcolor: 'background.paper', borderRadius: 1, boxShadow: 3 }}>
-                        {children}
-                        <Box 
-                            sx={{ p: 1, borderTop: '1px solid #eee', cursor: 'pointer', color: 'primary.main', fontWeight: 'bold' }}
-                            onMouseDown={(e) => e.preventDefault()} // Mencegah blur
-                            onClick={() => setOpenAddVendor(true)}
-                        >
-                            + Tambah Vendor Baru
-                        </Box>
-                    </Box>
-                )}
-                value={vendors.find((v) => v.value === field.value) || null}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Vendor/Supplier *"
-                    placeholder="Pilih atau tambah vendor..."
-                    error={!!error}
-                    helperText={error?.message}
-                  />
-                )}
-              />
-            )}
+            label="Vendor/Supplier *"
+            options={vendors}
+            onAddNew={() => setOpenAddVendor(true)} // Menyalakan fitur tambah baru
+            addNewLabel="Tambah Vendor Baru"
           />
         </Grid>
 
-        {/* Baris 3: Akun */}
+        {/* Baris 3: Akun (COA) */}
         <Grid item xs={12} md={4}>
-          <RHFTextField select name="coa" label="COA">
-            <MenuItem value="" disabled>Pilih COA...</MenuItem>
-            {COA_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
-          </RHFTextField>
+            <RHFAutocomplete
+                name="coa"
+                label="COA"
+                options={COA_OPTIONS}
+              />
         </Grid>
         <Grid item xs={12} md={4}>
-          <RHFTextField select name="akunDebit" label="Akun Debit *">
-            <MenuItem value="" disabled>Pilih Akun Debit...</MenuItem>
-            {AKUN_DEBIT_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
-          </RHFTextField>
+          <RHFAutocomplete
+            name="akunDebit"
+            label="Akun Debit *"
+            options={AKUN_DEBIT_OPTIONS}
+          />
         </Grid>
         <Grid item xs={12} md={4}>
-          <RHFTextField select name="akunKredit" label="Akun Kredit *">
-            <MenuItem value="" disabled>Pilih Akun Kredit...</MenuItem>
-            {AKUN_KREDIT_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
-          </RHFTextField>
+          <RHFAutocomplete
+            name="akunKredit"
+            label="Akun Kredit *"
+            options={AKUN_KREDIT_OPTIONS}
+          />
         </Grid>
 
-        {/* Baris 4: Detail Item */}
+        {/* Baris 4: Detail Item & Subtotal */}
         <Grid item xs={12} md={4}>
           <RHFTextField name="qty" label="Qty *" type="number" placeholder="Masukkan qty" />
         </Grid>
@@ -290,7 +243,7 @@ export default function FormPembelian() {
            </Box>
         </Grid>
 
-        {/* Baris 5: Pajak */}
+        {/* Baris 5: Pajak & Total Akhir */}
         <Grid item xs={12} md={4}>
           <RHFTextField select name="persentasePPN" label="Presentase PPN *">
              {PAJAK_PPN_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
@@ -308,21 +261,50 @@ export default function FormPembelian() {
            </Box>
         </Grid>
 
-        {/* Baris 6: Summary Pajak */}
+        {/* Baris 6: Summary / Rincian Akun Otomatis */}
         <Grid item xs={12}>
-            <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, p: 2, bgcolor: '#f9fafb', borderRadius: 1 }}>
-                <Box>
-                    <Typography variant="caption" display="block" color="text.secondary">PPN Amount</Typography>
-                    <Typography variant="subtitle1" color="primary.main" fontWeight="bold">+ {formatCurrency(ppnAmount || 0)}</Typography>
-                </Box>
-                <Box>
-                    <Typography variant="caption" display="block" color="text.secondary">PPh Amount</Typography>
-                    <Typography variant="subtitle1" color="error.main" fontWeight="bold">- {formatCurrency(pphAmount || 0)}</Typography>
-                </Box>
-                 <Box sx={{textAlign: 'right'}}>
-                    <Typography variant="caption" display="block" color="text.secondary">Subtotal Barang</Typography>
-                    <Typography variant="subtitle1" fontWeight="bold">{formatCurrency(subtotal || 0)}</Typography>
-                </Box>
+            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mt: 2, p: 2, bgcolor: '#f9fafb', borderRadius: 1 }}>
+                
+              
+                <Stack spacing={2} direction="row">
+                    <Box>
+                        <Typography variant="caption" display="block" color="text.secondary">COA : </Typography>
+                    </Box>
+                    {ppnAmount && ppnAmount > 0 && pphAmount && pphAmount > 0 && (
+                        <Box>
+                            <Typography variant="caption" display="block" color="text.secondary">
+                                Hutang PPN
+                            </Typography>
+                            <Typography variant="subtitle1" color="success.main" fontWeight="bold">
+                                + {formatCurrency(ppnAmount)}
+                            </Typography>
+                        </Box>
+                    )}
+
+                    {pphAmount && pphAmount > 0 && (
+                        <Box>
+                            <Typography variant="caption" display="block" color="text.secondary">
+                                Hutang Dibayar Dimuka
+                            </Typography>
+                            <Typography variant="subtitle1" color="error.main" fontWeight="bold">
+                                - {formatCurrency(pphAmount)}
+                            </Typography>
+                        </Box>
+                    )}
+                    
+                    {/* Jika tidak ada pajak, tampilkan placeholder agar tidak kosong (Opsional) */}
+                    {ppnAmount === 0 && pphAmount === 0 && (
+                        <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic', alignSelf: 'center' }}>
+                            Tidak ada pajak yang diterapkan
+                        </Typography>
+                    )}
+                </Stack>
+
+                {/* Bagian Kanan: Subtotal Barang */}
+                <Box sx={{textAlign: 'right'}}>
+                   <Typography variant="caption" display="block" color="text.secondary">Subtotal Barang</Typography>
+                   <Typography variant="subtitle1" fontWeight="bold">{formatCurrency(subtotal || 0)}</Typography>
+               </Box>
             </Stack>
         </Grid>
       </Grid>
@@ -332,7 +314,7 @@ export default function FormPembelian() {
         <Button
           type="submit"
           variant="contained"
-          color="success" // Menggunakan warna hijau sesuai tombol Simpan di gambar
+          color="success"
           disabled={isSubmitting}
           sx={{ px: 4, py: 1.2, fontWeight: 'bold' }}
         >
@@ -347,6 +329,7 @@ export default function FormPembelian() {
           Reset
         </Button>
       </Stack>
+
       {/* Dialog Tambah Vendor Baru */}
       <Dialog open={openAddVendor} onClose={() => setOpenAddVendor(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Tambah Vendor Baru</DialogTitle>
