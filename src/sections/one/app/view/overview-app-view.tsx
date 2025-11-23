@@ -98,6 +98,8 @@ export default function OverviewAppView() {
                   { id: 'no_invoice', label: 'No. Invoice' },
                   { id: 'akun', label: 'Akun' },
                   { id: 'coa', label: 'COA' },
+                  { id: 'pembelian', label: 'Pembelian' },
+                  { id: 'penjualan', label: 'Penjualan' },
                   { id: 'nominal', label: 'Nominal' },
                   { id: 'pajak', label: 'Pajak' },
                   { id: '' },
@@ -107,7 +109,22 @@ export default function OverviewAppView() {
 
             {/* Content Tab 2: DETAIL */}
             {currentTab === 'detail' && (
-              <AnalyticsTransactionDetail invoice={selectedInvoice} />
+              <AppNewInvoice
+                onViewDetail={handleViewDetail}
+                tableData={_appInvoices}
+                sx={{ boxShadow: 'none', borderRadius: 0 }} 
+                tableLabels={[
+                  { id: 'tanggal', label: 'Tanggal' },
+                  { id: 'no_invoice', label: 'No. Invoice' },
+                  { id: 'akun', label: 'Akun' },
+                  { id: 'coa', label: 'COA' },
+                  { id: 'pembelian', label: 'Pembelian' },
+                  { id: 'penjualan', label: 'Penjualan' },
+                  { id: 'nominal', label: 'Nominal' },
+                  { id: 'pajak', label: 'Pajak' },
+                  { id: '' },
+                ]}
+              />
             )}
           </Card>
         </Grid>

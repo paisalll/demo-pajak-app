@@ -122,6 +122,8 @@ function AppNewInvoiceRow({ row, onViewRow }: AppNewInvoiceRowProps) {
         <TableCell>{row.invoiceTo.name}</TableCell>
         <TableCell>{row.coa}</TableCell>
         <TableCell>{fCurrency(row.price)}</TableCell>
+        <TableCell>{fCurrency(row.price)}</TableCell>
+        <TableCell>{fCurrency(row.price + row.price)}</TableCell>
         <TableCell sx={{ color: 'text.secondary' }}>{fCurrency(taxAmount)}</TableCell>
         
         <TableCell align="right" sx={{ pr: 1 }}>
