@@ -54,7 +54,7 @@ export default function FormPenjualan() {
     qty: 0,
     hargaSatuan: 0,
     persentasePPN: 11,
-    persentasePPh: 0,
+    persentasePPh: 2,
     // Field hasil hitungan (read only/display)
     subtotal: 0,
     ppnAmount: 0,
@@ -195,54 +195,53 @@ export default function FormPenjualan() {
         </Grid>
         <Grid item xs={12} md={4}>
            {/* Display Only Subtotal */}
-           <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1, bgcolor: '#f9fafb' }}>
+           <Box sx={{ px: 1, py: 0.3, border: '1px solid #e0e0e0', borderRadius: 1, bgcolor: '#f9fafb' }}>
                <Typography variant="caption" color="text.secondary">Subtotal</Typography>
-               <Typography variant="h6" color="primary">{formatCurrency(subtotal || 0)}</Typography>
+               <Typography variant="subtitle1" color="primary">{formatCurrency(subtotal || 0)}</Typography>
            </Box>
         </Grid>
 
-        {/* Baris 5: Pajak */}
+        {/* Baris 5: Pajak & Total Akhir */}
         <Grid item xs={12} md={4}>
           <RHFTextField select name="persentasePPN" label="Presentase PPN *">
-             {PAJAK_PPN_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
+              {PAJAK_PPN_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
           </RHFTextField>
         </Grid>
         <Grid item xs={12} md={4}>
           <RHFTextField select name="persentasePPh" label="Presentase PPh *">
-             {PAJAK_PPH_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
+              {PAJAK_PPH_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
           </RHFTextField>
         </Grid>
-         <Grid item xs={12} md={4}>
-           {/* Display Only Total Akhir */}
-           <Box sx={{ p: 2, border: '1px solid #c8facd', borderRadius: 1, bgcolor: '#f0fdf4' }}>
-               <Typography variant="caption" color="text.secondary">Total (Subtotal + PPN - PPh)</Typography>
-               <Typography variant="h6" sx={{ color: 'success.main', fontWeight: 'bold' }}>{formatCurrency(totalAkhir || 0)}</Typography>
-           </Box>
+          <Grid item xs={12} md={4}>
+            <Box sx={{ px: 1, py: 0.3, border: '1px solid #c8facd', borderRadius: 1, bgcolor: '#f0fdf4' }}>
+                <Typography variant="caption" color="text.secondary">Total (Subtotal + PPN - PPh)</Typography>
+                <Typography variant="subtitle1" sx={{ color: 'success.main', fontWeight: 'bold' }}>{formatCurrency(totalAkhir || 0)}</Typography>
+            </Box>
         </Grid>
 
-        {/* Baris 6: Summary Pajak (Info tambahan seperti di gambar bagian bawah) */}
+        {/* Baris 6: Summary / Rincian Akun Otomatis */}
         <Grid item xs={12}>
-            <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, p: 2, bgcolor: '#f9fafb', borderRadius: 1 }}>
-                <Box>
-                    <Typography variant="caption" display="block" color="text.secondary">PPN Amount</Typography>
-                    <Typography variant="subtitle1" color="primary.main" fontWeight="bold">+ {formatCurrency(ppnAmount || 0)}</Typography>
-                    <Typography variant="subtitle1" color="success.main" fontWeight="bold">
-                      { ppnAmount &&  ppnAmount > 0 
-                        ? 'Hutang PPn'
-                        :  ' - '}
-                    </Typography>
-                </Box>
-                <Box>
-                    <Typography variant="caption" display="block" color="text.secondary">PPh Amount</Typography>
-                    <Typography variant="subtitle1" color="error.main" fontWeight="bold">- {formatCurrency(pphAmount || 0)}</Typography>
-                    <Typography variant="subtitle1" color="error.main" fontWeight="bold">
-                      { pphAmount && pphAmount > 0 ? 'Hutang Dibayar Dimuka' : ' - '}
-                    </Typography>
-                </Box>
-                 <Box sx={{textAlign: 'right'}}>
-                    <Typography variant="caption" display="block" color="text.secondary">Subtotal Barang</Typography>
-                    <Typography variant="subtitle1" fontWeight="bold">{formatCurrency(subtotal || 0)}</Typography>
-                </Box>
+          <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, p: 1, bgcolor: '#f9fafb', borderRadius: 1 }}>
+              <Box>
+                  <Typography variant="caption" display="block" color="text.secondary">PPN Amount</Typography>
+                  <Typography variant="subtitle2" color="primary.main" fontWeight="bold">+ {formatCurrency(ppnAmount || 0)}</Typography>
+                  <Typography variant="subtitle2" color="success.main" fontWeight="bold">
+                    { ppnAmount &&  ppnAmount > 0 
+                      ? 'Hutang PPn'
+                      :  ' - '}
+                  </Typography>
+              </Box>
+              <Box>
+                  <Typography variant="caption" display="block" color="text.secondary">PPh Amount</Typography>
+                  <Typography variant="subtitle2" color="error.main" fontWeight="bold">- {formatCurrency(pphAmount || 0)}</Typography>
+                  <Typography variant="subtitle2" color="error.main" fontWeight="bold">
+                    { pphAmount && pphAmount > 0 ? 'Hutang Dibayar Dimuka' : ' - '}
+                  </Typography>
+              </Box>
+                <Box sx={{textAlign: 'right'}}>
+                  <Typography variant="caption" display="block" color="text.secondary">Subtotal Barang</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">{formatCurrency(subtotal || 0)}</Typography>
+              </Box>
             </Stack>
         </Grid>
       </Grid>

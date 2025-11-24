@@ -91,7 +91,7 @@ export default function FormPembelian() {
     qty: 0,
     hargaSatuan: 0,
     persentasePPN: 11,
-    persentasePPh: 0,
+    persentasePPh: 2,
     subtotal: 0,
     ppnAmount: 0,
     pphAmount: 0,
@@ -230,9 +230,9 @@ export default function FormPembelian() {
             />
         </Grid>
         <Grid item xs={12} md={4}>
-           <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1, bgcolor: '#f9fafb' }}>
+           <Box sx={{ px: 1, py: 0.3, border: '1px solid #e0e0e0', borderRadius: 1, bgcolor: '#f9fafb' }}>
                <Typography variant="caption" color="text.secondary">Subtotal</Typography>
-               <Typography variant="h6" color="primary">{formatCurrency(subtotal || 0)}</Typography>
+               <Typography variant="subtitle1" color="primary">{formatCurrency(subtotal || 0)}</Typography>
            </Box>
         </Grid>
 
@@ -248,56 +248,35 @@ export default function FormPembelian() {
           </RHFTextField>
         </Grid>
          <Grid item xs={12} md={4}>
-           <Box sx={{ p: 2, border: '1px solid #c8facd', borderRadius: 1, bgcolor: '#f0fdf4' }}>
+           <Box sx={{ px: 1, py: 0.3, border: '1px solid #c8facd', borderRadius: 1, bgcolor: '#f0fdf4' }}>
                <Typography variant="caption" color="text.secondary">Total (Subtotal + PPN - PPh)</Typography>
-               <Typography variant="h6" sx={{ color: 'success.main', fontWeight: 'bold' }}>{formatCurrency(totalAkhir || 0)}</Typography>
+               <Typography variant="subtitle1" sx={{ color: 'success.main', fontWeight: 'bold' }}>{formatCurrency(totalAkhir || 0)}</Typography>
            </Box>
         </Grid>
 
         {/* Baris 6: Summary / Rincian Akun Otomatis */}
         <Grid item xs={12}>
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mt: 2, p: 2, bgcolor: '#f9fafb', borderRadius: 1 }}>
-                
-              
-                <Stack spacing={2} direction="row">
-                    <Box>
-                        <Typography variant="caption" display="block" color="text.secondary">COA : </Typography>
-                    </Box>
-                    {ppnAmount && ppnAmount > 0 && pphAmount && pphAmount > 0 && (
-                        <Box>
-                            <Typography variant="caption" display="block" color="text.secondary">
-                                Hutang PPN
-                            </Typography>
-                            <Typography variant="subtitle1" color="success.main" fontWeight="bold">
-                                + {formatCurrency(ppnAmount)}
-                            </Typography>
-                        </Box>
-                    )}
-
-                    {pphAmount && pphAmount > 0 && (
-                        <Box>
-                            <Typography variant="caption" display="block" color="text.secondary">
-                                Hutang Dibayar Dimuka
-                            </Typography>
-                            <Typography variant="subtitle1" color="error.main" fontWeight="bold">
-                                - {formatCurrency(pphAmount)}
-                            </Typography>
-                        </Box>
-                    )}
-                    
-                    {/* Jika tidak ada pajak, tampilkan placeholder agar tidak kosong (Opsional) */}
-                    {ppnAmount === 0 && pphAmount === 0 && (
-                        <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic', alignSelf: 'center' }}>
-                            Tidak ada pajak yang diterapkan
-                        </Typography>
-                    )}
-                </Stack>
-
-                {/* Bagian Kanan: Subtotal Barang */}
+          <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, p: 1, bgcolor: '#f9fafb', borderRadius: 1 }}>
+              <Box>
+                  <Typography variant="caption" display="block" color="text.secondary">PPN Amount</Typography>
+                  <Typography variant="subtitle2" color="primary.main" fontWeight="bold">+ {formatCurrency(ppnAmount || 0)}</Typography>
+                  <Typography variant="subtitle2" color="success.main" fontWeight="bold">
+                    { ppnAmount &&  ppnAmount > 0 
+                      ? 'Hutang PPn'
+                      :  ' - '}
+                  </Typography>
+              </Box>
+              <Box>
+                  <Typography variant="caption" display="block" color="text.secondary">PPh Amount</Typography>
+                  <Typography variant="subtitle2" color="error.main" fontWeight="bold">- {formatCurrency(pphAmount || 0)}</Typography>
+                  <Typography variant="subtitle2" color="error.main" fontWeight="bold">
+                    { pphAmount && pphAmount > 0 ? 'Hutang Dibayar Dimuka' : ' - '}
+                  </Typography>
+              </Box>
                 <Box sx={{textAlign: 'right'}}>
-                   <Typography variant="caption" display="block" color="text.secondary">Subtotal Barang</Typography>
-                   <Typography variant="subtitle1" fontWeight="bold">{formatCurrency(subtotal || 0)}</Typography>
-               </Box>
+                  <Typography variant="caption" display="block" color="text.secondary">Subtotal Barang</Typography>
+                  <Typography variant="subtitle2" fontWeight="bold">{formatCurrency(subtotal || 0)}</Typography>
+              </Box>
             </Stack>
         </Grid>
       </Grid>
