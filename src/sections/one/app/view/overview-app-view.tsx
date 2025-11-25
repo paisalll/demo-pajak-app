@@ -54,7 +54,7 @@ export default function OverviewAppView() {
   }, []);
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
+    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <Grid container spacing={3}>
         
         {/* --- WIDGET SUMMARY --- */}
