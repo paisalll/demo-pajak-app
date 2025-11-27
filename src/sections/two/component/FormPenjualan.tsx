@@ -195,7 +195,7 @@ export default function FormPenjualan() {
         </Grid>
         <Grid item xs={12} md={4}>
            {/* Display Only Subtotal */}
-           <Box sx={{ px: 1, py: 0.3, border: '1px solid #e0e0e0', borderRadius: 1, bgcolor: '#f9fafb' }}>
+           <Box sx={{ px: 1, py: 0.3, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                <Typography variant="caption" color="text.secondary">Subtotal</Typography>
                <Typography variant="subtitle1" color="primary">{formatCurrency(subtotal || 0)}</Typography>
            </Box>
@@ -213,7 +213,7 @@ export default function FormPenjualan() {
           </RHFTextField>
         </Grid>
           <Grid item xs={12} md={4}>
-            <Box sx={{ px: 1, py: 0.3, border: '1px solid #c8facd', borderRadius: 1, bgcolor: '#f0fdf4' }}>
+            <Box sx={{ px: 1, py: 0.3, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                 <Typography variant="caption" color="text.secondary">Total (Subtotal + PPN - PPh)</Typography>
                 <Typography variant="subtitle1" sx={{ color: 'success.main', fontWeight: 'bold' }}>{formatCurrency(totalAkhir || 0)}</Typography>
             </Box>
@@ -221,7 +221,7 @@ export default function FormPenjualan() {
 
         {/* Baris 6: Summary / Rincian Akun Otomatis */}
         <Grid item xs={12}>
-          <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, p: 1, bgcolor: '#f9fafb', borderRadius: 1 }}>
+          <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, p: 1, borderRadius: 1 }}>
               <Box>
                   <Typography variant="caption" display="block" color="text.secondary">PPN Amount</Typography>
                   <Typography variant="subtitle2" color="primary.main" fontWeight="bold">+ {formatCurrency(ppnAmount || 0)}</Typography>
