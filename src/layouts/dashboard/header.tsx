@@ -23,6 +23,7 @@ import {
   ContactsPopover,
   NotificationsPopover,
 } from '../_common';
+import { useAuthContext } from 'src/auth/hooks/use-auth-context';
 
 // ----------------------------------------------------------------------
 
@@ -35,6 +36,8 @@ export default function Header({ onOpenNav }: Props) {
 
   const settings = useSettingsContext();
 
+  const {user} = useAuthContext();
+  
   const isNavHorizontal = settings.themeLayout === 'horizontal';
 
   const isNavMini = settings.themeLayout === 'mini';

@@ -5,6 +5,7 @@ import axios, { endpoints } from 'src/utils/axios';
 import { AuthContext } from './auth-context';
 import { isValidToken, setSession } from './utils';
 import { ActionMapType, AuthStateType, AuthUserType } from '../../types';
+import { HOST_API } from 'src/config-global';
 
 // ----------------------------------------------------------------------
 
@@ -91,13 +92,12 @@ export function AuthProvider({ children }: Props) {
 
         const res = await axios.get(endpoints.auth.me);
 
-        const { user } = res.data;
 
         dispatch({
           type: Types.INITIAL,
           payload: {
             user: {
-              ...user,
+              ...res.data,
               accessToken,
             },
           },
@@ -126,24 +126,23 @@ export function AuthProvider({ children }: Props) {
   }, [initialize]);
 
   // LOGIN
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (username: string, password: string) => {
     const data = {
-      email,
+      username,
       password,
     };
 
     const res = await axios.post(endpoints.auth.login, data);
+    const { access_token, user } = res.data;
 
-    const { accessToken, user } = res.data;
-
-    setSession(accessToken);
+    setSession(access_token);
 
     dispatch({
       type: Types.LOGIN,
       payload: {
         user: {
           ...user,
-          accessToken,
+          access_token,
         },
       },
     });
