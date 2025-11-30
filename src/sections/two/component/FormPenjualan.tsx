@@ -9,6 +9,7 @@ import FormProvider from '../../../components/hook-form/form-provider';
 import RHFTextField from '../../../components/hook-form/rhf-text-field';
 import RHFAutocomplete from 'src/components/hook-form/rhf-auto-complete';
 import {COA_OPTIONS, INITIAL_CUSTOMERS, AKUN_DEBIT_OPTIONS, AKUN_KREDIT_OPTIONS, PAJAK_PPN_OPTIONS, PAJAK_PPH_OPTIONS} from './utils';
+import useMasterData from '../api/useMasterData';
 
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
@@ -16,7 +17,9 @@ const getTodayDate = () => new Date().toISOString().split('T')[0];
 // ----------------------------------------------------------------------
 
 export default function FormPenjualan() {
-  const [customers, setCustomers] = useState(INITIAL_CUSTOMERS);
+
+  const { vendors, setVendors, coaOptions, ppnOptions, pphOptions, isLoading } = useMasterData();
+  
   const [openAddCustomer, setOpenAddCustomer] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState('');
 
@@ -53,8 +56,8 @@ export default function FormPenjualan() {
     akunKredit: '',
     qty: 0,
     hargaSatuan: 0,
-    persentasePPN: 11,
-    persentasePPh: 2,
+    persentasePPN: 4,
+    persentasePPh: 4,
     // Field hasil hitungan (read only/display)
     subtotal: 0,
     ppnAmount: 0,
@@ -100,7 +103,7 @@ export default function FormPenjualan() {
   const handleAddNewCustomer = () => {
     if (newCustomerName.trim() !== '') {
       const newOption = { label: newCustomerName, value: newCustomerName };
-      setCustomers((prev) => [...prev, newOption]);
+      setVendors((prev: any[]) => [...prev, newOption]);
       setValue('customer', newCustomerName); // Set nilai form ke customer baru
       setOpenAddCustomer(false);
       setNewCustomerName('');
@@ -155,7 +158,7 @@ export default function FormPenjualan() {
           <RHFAutocomplete
             name="customer"
             label="Vendor/Customer *"
-            options={customers}
+            options={vendors}
             onAddNew={() => setOpenAddCustomer(true)} // Menyalakan fitur tambah baru
             addNewLabel="Tambah Customer Baru"
           />
@@ -166,7 +169,7 @@ export default function FormPenjualan() {
           <RHFAutocomplete
             name="akunDebit"
             label="Akun Debit *"
-            options={COA_OPTIONS}
+            options={coaOptions}
           />
         </Grid>
 
@@ -174,7 +177,7 @@ export default function FormPenjualan() {
           <RHFAutocomplete
             name="akunKredit"
             label="Akun Kredit *"
-            options={COA_OPTIONS}
+            options={coaOptions}
           />
         </Grid>
 
@@ -204,12 +207,12 @@ export default function FormPenjualan() {
         {/* Baris 5: Pajak & Total Akhir */}
         <Grid item xs={12} md={4}>
           <RHFTextField select name="persentasePPN" label="Presentase PPN *">
-              {PAJAK_PPN_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
+              {ppnOptions.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
           </RHFTextField>
         </Grid>
         <Grid item xs={12} md={4}>
           <RHFTextField select name="persentasePPh" label="Presentase PPh *">
-              {PAJAK_PPH_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
+              {pphOptions.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
           </RHFTextField>
         </Grid>
           <Grid item xs={12} md={4}>

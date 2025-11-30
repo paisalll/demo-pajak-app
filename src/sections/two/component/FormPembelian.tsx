@@ -24,6 +24,8 @@ import {
   PAJAK_PPN_OPTIONS, 
   PAJAK_PPH_OPTIONS
 } from './utils';
+import axios, { endpoints } from 'src/utils/axios';
+import useMasterData from '../api/useMasterData';
 
 // ----------------------------------------------------------------------
 
@@ -34,9 +36,13 @@ const formatCurrency = (val: number) =>
 // ----------------------------------------------------------------------
 
 export default function FormPembelian() {
-  const [vendors, setVendors] = useState(INITIAL_CUSTOMERS);
+
+  // State untuk Data Master dari API
+  const { companies, setCompanies, coaOptions, ppnOptions, pphOptions, isLoading } = useMasterData();
+  // const [vendors, setVendors] = useState(INITIAL_CUSTOMERS);
   const [openAddVendor, setOpenAddVendor] = useState(false);
   const [newVendorName, setNewVendorName] = useState('');
+
   
   interface PurchaseFormValues {
     tanggalPencatatan: string;
@@ -90,8 +96,8 @@ export default function FormPembelian() {
     akunKredit: '',
     qty: 0,
     hargaSatuan: 0,
-    persentasePPN: 11,
-    persentasePPh: 2,
+    persentasePPN: 4,
+    persentasePPh: 4,
     subtotal: 0,
     ppnAmount: 0,
     pphAmount: 0,
@@ -138,7 +144,7 @@ export default function FormPembelian() {
   const handleAddNewVendor = () => {
     if (newVendorName.trim() !== '') {
       const newOption = { label: newVendorName, value: newVendorName };
-      setVendors((prev) => [...prev, newOption]);
+      setCompanies((prev: any[]) => [...prev, newOption]);
       setValue('vendor', newVendorName); 
       setNewVendorName('');
       setOpenAddVendor(false);
@@ -192,7 +198,7 @@ export default function FormPembelian() {
           <RHFAutocomplete
             name="vendor"
             label="Vendor/Supplier *"
-            options={vendors}
+            options={companies}
             onAddNew={() => setOpenAddVendor(true)} // Menyalakan fitur tambah baru
             addNewLabel="Tambah Vendor Baru"
           />
@@ -203,14 +209,14 @@ export default function FormPembelian() {
           <RHFAutocomplete
             name="akunDebit"
             label="Akun Debit *"
-            options={COA_OPTIONS}
+            options={coaOptions}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <RHFAutocomplete
             name="akunKredit"
             label="Akun Kredit *"
-            options={COA_OPTIONS}
+            options={coaOptions}
           />
         </Grid>
 
@@ -239,12 +245,12 @@ export default function FormPembelian() {
         {/* Baris 5: Pajak & Total Akhir */}
         <Grid item xs={12} md={4}>
           <RHFTextField select name="persentasePPN" label="Presentase PPN *">
-             {PAJAK_PPN_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
+             {ppnOptions.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
           </RHFTextField>
         </Grid>
         <Grid item xs={12} md={4}>
           <RHFTextField select name="persentasePPh" label="Presentase PPh *">
-             {PAJAK_PPH_OPTIONS.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
+             {pphOptions.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
           </RHFTextField>
         </Grid>
          <Grid item xs={12} md={4}>

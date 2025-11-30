@@ -36,6 +36,23 @@ export const endpoints = {
     login: '/auth/login',
     register: '/auth/register',
   },
+  master: {
+    coa: {
+      root: '/master/coa',
+    },
+    ppn: {
+      root: '/master/ppn',
+    },
+    pph: {
+      root: '/master/pph',
+    },
+    company: {
+      root: '/master/company',
+    },
+    partners: {
+      root: '/master/partners',
+    },
+  },
   mail: {
     list: '/mail/list',
     details: '/mail/details',
