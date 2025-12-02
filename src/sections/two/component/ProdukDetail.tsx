@@ -75,10 +75,24 @@ export default function ProdukDetail() {
                       size="small"
                       type="number"
                       name={`products.${index}.qty`}
-                      InputProps={{ inputProps: { min: 1, style: { textAlign: 'center' } } }}
+                      InputProps={{ 
+                        inputProps: { min: 1, style: { textAlign: 'center' } } 
+                      }}
+                      sx={{
+                        '& input[type=number]': {
+                          MozAppearance: 'textfield', // Untuk Firefox
+                        },
+                        '& input[type=number]::-webkit-outer-spin-button': {
+                          WebkitAppearance: 'auto', // Memaksa arrow muncul (Chrome/Safari/Edge)
+                          margin: 0,
+                        },
+                        '& input[type=number]::-webkit-inner-spin-button': {
+                          WebkitAppearance: 'auto', // Memaksa arrow muncul (Chrome/Safari/Edge)
+                          margin: 0,
+                        },
+                      }}
                     />
                   </TableCell>
-
                   {/* Harga Satuan */}
                   <TableCell>
                     <RHFTextField
