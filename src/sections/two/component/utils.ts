@@ -1,3 +1,34 @@
+ interface ProductItem {
+  nama_produk: string;
+  deskripsi: string;
+  qty: number;
+  harga_satuan: number;
+  sub_total: number; // Field bayangan untuk tampilan frontend
+}
+
+export interface TransactionFormValues {
+  id_company: string;
+  tanggal_pencatatan: Date | null;
+  tanggal_invoice: Date | null;
+  tanggal_jatuh_tempo: Date | null;
+  no_invoice: string;
+  no_faktur: string;
+  type: string;
+  id_partner: string;
+  id_akun_debit: string;
+  id_akun_kredit: string;
+  id_ppn_fk: number | string; // Bisa string dari select, nanti convert ke number
+  id_pph_fk: number | string;
+  
+  products: ProductItem[];
+  
+  // Field Kalkulasi (Tidak dikirim ke API, hanya untuk display)
+  total_dpp: number;
+  total_ppn: number;
+  total_pph: number;
+  total_transaksi: number;
+}
+ 
  export const INITIAL_CUSTOMERS = [
   { label: 'PT Maju Jaya', value: 'PT Maju Jaya' },
   { label: 'CV Sejahtera', value: 'CV Sejahtera' },

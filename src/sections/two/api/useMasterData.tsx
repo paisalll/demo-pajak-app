@@ -47,14 +47,16 @@ export default function useMasterData() {
         // 3. Mapping PPN
         const ppnData = resPpn.data.map((item: any) => ({
           label: item.label,
-          value: item.id_ppn 
+          value: item.id_ppn,
+          rate: Number(item.rate) 
         }));
         setPpnOptions(ppnData);
 
         // 4. Mapping PPh
         const pphData = resPph.data.map((item: any) => ({
           label: item.label,
-          value: item.id_pph 
+          value: item.id_pph,
+          rate: Number(item.rate) 
         }));
         setPphOptions(pphData);
 

@@ -18,6 +18,9 @@ import { MotionLazy } from 'src/components/animate/motion-lazy';
 import { SettingsProvider, SettingsDrawer } from 'src/components/settings';
 // auth
 import { AuthProvider, AuthConsumer } from 'src/auth/context/jwt';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { SnackbarProvider } from './components/snackbar';
 
 // ----------------------------------------------------------------------
 
@@ -48,15 +51,19 @@ export default function App() {
           themeStretch: false,
         }}
       >
-        <ThemeProvider>
-          <MotionLazy>
-            <SettingsDrawer />
-            <ProgressBar />
-            <AuthConsumer>
-              <Router />
-            </AuthConsumer>
-          </MotionLazy>
-        </ThemeProvider>
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="id">
+          <ThemeProvider>
+            <SnackbarProvider>
+            <MotionLazy>
+              <SettingsDrawer />
+              <ProgressBar />
+              <AuthConsumer>
+                <Router />
+              </AuthConsumer>
+            </MotionLazy>
+            </SnackbarProvider>
+          </ThemeProvider>
+        </LocalizationProvider>
       </SettingsProvider>
     </AuthProvider>
   );

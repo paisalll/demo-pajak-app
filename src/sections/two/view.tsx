@@ -23,7 +23,7 @@ export default function InputDataPajakPage() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       <Card sx={{ p: 0, boxShadow: 3 }}>
         {/* Header Form */}
         <Box sx={{ p: 4, pb: 2 }}>

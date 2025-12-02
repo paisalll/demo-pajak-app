@@ -1,333 +1,327 @@
 import React, { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as Yup from 'yup';
+import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
 
 // @mui Material components
 import { 
-  Grid, Stack, Button, MenuItem, Box, Typography, 
-  InputAdornment, TextField, Dialog, DialogTitle, 
-  DialogContent, DialogActions 
+  Grid, Stack, Button, MenuItem, Box, Typography, Card, 
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField 
 } from '@mui/material';
+import LoadingButton from '@mui/lab/LoadingButton';
+import { DatePicker } from '@mui/x-date-pickers';
 
 // Components
-import FormProvider from '../../../components/hook-form/form-provider';
-import RHFTextField from '../../../components/hook-form/rhf-text-field';
-import RHFAutocomplete from 'src/components/hook-form/rhf-auto-complete';
+import FormProvider, { RHFTextField } from 'src/components/hook-form'; // Sesuaikan import
+import ProdukDetail from './ProdukDetail'; // Pastikan path benar
 
-// Utils
-import {
-  COA_OPTIONS, 
-  INITIAL_CUSTOMERS, 
-  AKUN_DEBIT_OPTIONS, 
-  AKUN_KREDIT_OPTIONS, 
-  PAJAK_PPN_OPTIONS, 
-  PAJAK_PPH_OPTIONS
-} from './utils';
-import axios, { endpoints } from 'src/utils/axios';
-import useMasterData from '../api/useMasterData';
+// Hooks & API
+import useMasterData from '../api/useMasterData'; // Untuk ambil data vendor/coa
+import useCreateTransaction from '../api/useTransaction';
+import { TransactionFormValues } from './utils';
+import RHFAutocomplete from 'src/components/hook-form/rhf-auto-complete';
+import { useSnackbar } from 'src/components/snackbar';
 
 // ----------------------------------------------------------------------
 
-const getTodayDate = () => new Date().toISOString().split('T')[0];
 const formatCurrency = (val: number) => 
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
 
 // ----------------------------------------------------------------------
 
 export default function FormPembelian() {
+  const navigate = useNavigate();
+  
+  const { enqueueSnackbar } = useSnackbar();
+  
+  // 1. Hooks API
+  const { createTransaction, isLoading: isSubmittingAPI } = useCreateTransaction();
+  const { companies, coaOptions, ppnOptions, pphOptions } = useMasterData(); // Ambil data master
 
-  // State untuk Data Master dari API
-  const { companies, setCompanies, coaOptions, ppnOptions, pphOptions, isLoading } = useMasterData();
-  // const [vendors, setVendors] = useState(INITIAL_CUSTOMERS);
+  // State untuk Tambah Vendor Cepat (Optional)
   const [openAddVendor, setOpenAddVendor] = useState(false);
   const [newVendorName, setNewVendorName] = useState('');
 
-  
-  interface PurchaseFormValues {
-    tanggalPencatatan: string;
-    tanggalInvoice: string;
-    tanggalJatuhTempo: string;
-    noFaktur: string;
-    noInvoice: string;
-    vendor: string;
-    coa?: string;
-    akunDebit: string;
-    akunKredit: string;
-    qty: number;
-    hargaSatuan: number;
-    persentasePPN: number;
-    persentasePPh: number;
-    subtotal?: number;
-    ppnAmount?: number;
-    pphAmount?: number;
-    totalAkhir?: number;
-  }
-
-  const PurchaseFormSchema = Yup.object().shape({
-    tanggalPencatatan: Yup.string().required('Tanggal wajib diisi'),
-    tanggalInvoice: Yup.string().required('Tanggal wajib diisi'),
-    tanggalJatuhTempo: Yup.string().required('Tanggal wajib diisi'),
-    noFaktur: Yup.string().required('No. Faktur wajib diisi'),
-    noInvoice: Yup.string().required('No. Invoice wajib diisi'),
-    vendor: Yup.string().required('Vendor wajib diisi'),
-    coa: Yup.string(),
-    akunDebit: Yup.string().required('Akun Debit wajib dipilih'),
-    akunKredit: Yup.string().required('Akun Kredit wajib dipilih'),
-    qty: Yup.number().min(1, 'Minimal 1').required('Wajib diisi'),
-    hargaSatuan: Yup.number().min(0, 'Minimal 0').required('Wajib diisi'),
-    persentasePPN: Yup.number().required('PPN wajib dipilih'),
-    persentasePPh: Yup.number().required('PPh wajib dipilih'),
-    subtotal: Yup.number(),
-    ppnAmount: Yup.number(),
-    pphAmount: Yup.number(),
-    totalAkhir: Yup.number(),
-  });
-
-  const defaultValues: PurchaseFormValues = {
-    tanggalPencatatan: getTodayDate(),
-    tanggalInvoice: getTodayDate(),
-    tanggalJatuhTempo: getTodayDate(),
-    noFaktur: '',
-    noInvoice: '',
-    vendor: '',
-    coa: '',
-    akunDebit: '',
-    akunKredit: '',
-    qty: 0,
-    hargaSatuan: 0,
-    persentasePPN: 4,
-    persentasePPh: 4,
-    subtotal: 0,
-    ppnAmount: 0,
-    pphAmount: 0,
-    totalAkhir: 0,
-  };
-
-  const methods = useForm<PurchaseFormValues>({
-    resolver: yupResolver<PurchaseFormValues>(PurchaseFormSchema),
-    defaultValues,
+  // 2. Setup Form dengan React Hook Form
+  const methods = useForm<TransactionFormValues>({
+    defaultValues: {
+      type: 'pembelian',
+      id_company: '',
+      tanggal_pencatatan: new Date(),
+      tanggal_invoice: new Date(),
+      tanggal_jatuh_tempo: new Date(),
+      no_invoice: '',
+      no_faktur: '',
+      id_partner: '',
+      id_akun_debit: '',
+      id_akun_kredit: '',
+      id_ppn_fk: '',
+      id_pph_fk: '',
+      
+      // Default 1 baris produk kosong
+      products: [
+        { nama_produk: '', deskripsi: '', qty: 1, harga_satuan: 0, sub_total: 0 }
+      ],
+      
+      // Field Kalkulasi (Display Only)
+      total_dpp: 0,
+      total_ppn: 0,
+      total_pph: 0,
+      total_transaksi: 0,
+    },
   });
 
   const {
-    reset,
-    handleSubmit,
+    watch,
     setValue,
+    handleSubmit,
     control,
-    formState: { isSubmitting },
+    reset,
   } = methods;
 
-  // Watch nilai untuk kalkulasi realtime
-  const values = useWatch({
-    control,
-    name: ['qty', 'hargaSatuan', 'persentasePPN', 'persentasePPh'],
-  });
+  // 3. Live Calculation Logic
+  const values = watch();
 
-  // Logic Kalkulasi
   useEffect(() => {
-    const [qty, hargaSatuan, ppn, pph] = values;
+    const products = values.products || [];
     
-    const subtotal = (Number(qty) || 0) * (Number(hargaSatuan) || 0);
-    const ppnAmount = subtotal * (Number(ppn) / 100);
-    const pphAmount = subtotal * (Number(pph) / 100);
-    
-    // Total Pembelian = Subtotal + PPN - PPh 
-    const totalAkhir = subtotal + ppnAmount - pphAmount;
+    // A. Hitung Total DPP (Sum dari semua produk)
+    const totalDPP = products.reduce((acc, item) => {
+        return acc + (Number(item.qty || 0) * Number(item.harga_satuan || 0));
+    }, 0);
 
-    setValue('subtotal', subtotal);
-    setValue('ppnAmount', ppnAmount);
-    setValue('pphAmount', pphAmount);
-    setValue('totalAkhir', totalAkhir);
-  }, [values, setValue]);
+    // B. Hitung Pajak
+    let nominalPPN = 0;
+    let nominalPPh = 0;
 
-  // Logic Tambah Vendor Baru
-  const handleAddNewVendor = () => {
-    if (newVendorName.trim() !== '') {
-      const newOption = { label: newVendorName, value: newVendorName };
-      setCompanies((prev: any[]) => [...prev, newOption]);
-      setValue('vendor', newVendorName); 
-      setNewVendorName('');
-      setOpenAddVendor(false);
-    }
-  };
+    // Cari rate PPN dari options (Pastikan value type number/string match)
+    const selectedPPN = ppnOptions?.find(p => p.value == values.id_ppn_fk);
+    if (selectedPPN) nominalPPN = totalDPP * (selectedPPN.rate || 0); // Asumsi API return field 'rate'
 
-  const onSubmit = async (data: any) => {
+    // Cari rate PPh
+    const selectedPPh = pphOptions?.find(p => p.value == values.id_pph_fk);
+    if (selectedPPh) nominalPPh = totalDPP * (selectedPPh.rate || 0);
+
+    // C. Grand Total Pembelian
+    // Rumus: DPP + PPN - PPh (Jika PPh dipotong saat bayar) 
+    // Atau DPP + PPN (Jika PPh urusan nanti). Sesuaikan dengan logic akuntansi Anda.
+    // Di sini saya pakai: Total Tagihan = DPP + PPN - PPh (Net Payable)
+    const grandTotal = totalDPP + nominalPPN - nominalPPh;
+
+    // Update Form State untuk Display
+    setValue('total_dpp', totalDPP);
+    setValue('total_ppn', nominalPPN);
+    setValue('total_pph', nominalPPh);
+    setValue('total_transaksi', grandTotal);
+
+  }, [
+    JSON.stringify(values.products), // Re-calc jika produk berubah
+    values.id_ppn_fk, 
+    values.id_pph_fk
+  ]); 
+
+  // 4. Submit Handler
+  const onSubmit = async (data: TransactionFormValues) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      console.log('DATA PEMBELIAN:', data);
-      alert(`Data Pembelian Tersimpan!\nTotal: ${formatCurrency(data.totalAkhir)}`);
-      reset();
+      const payload = {
+        ...data,
+        tanggal_pencatatan: data.tanggal_pencatatan ? new Date(data.tanggal_pencatatan).toISOString() : new Date().toISOString(),
+        tanggal_invoice: data.tanggal_invoice ? new Date(data.tanggal_invoice).toISOString() : new Date().toISOString(),
+        tanggal_jatuh_tempo: data.tanggal_jatuh_tempo ? new Date(data.tanggal_jatuh_tempo).toISOString() : new Date().toISOString(),
+        
+        // Convert ID pajak ke number (jika backend butuh number)
+        id_ppn_fk: data.id_ppn_fk ? Number(data.id_ppn_fk) : undefined,
+        id_pph_fk: data.id_pph_fk ? Number(data.id_pph_fk) : undefined,
+        
+        // Map products (pastikan number)
+        products: data.products.map(p => ({
+            nama_produk: p.nama_produk,
+            deskripsi: p.deskripsi,
+            qty: Number(p.qty),
+            harga_satuan: Number(p.harga_satuan)
+        }))
+      };
+
+      // Kirim ke API
+      await createTransaction(payload as any);
+      
+      enqueueSnackbar(`Pembelian Berhasil Disimpan!\nTotal: ${formatCurrency(data.total_transaksi)} \n Silahkan Buka Dashboard atau Laporan`, { variant: 'success' });
+      // navigate('/dashboard/pembelian'); // Redirect jika perlu
+      reset(); // Reset form
+
     } catch (error) {
       console.error(error);
+      enqueueSnackbar('Gagal menyimpan data pembelian.', { variant: 'error' });
     }
   };
-
-  // Ambil nilai hasil kalkulasi untuk ditampilkan di UI
-  const { subtotal, ppnAmount, pphAmount, totalAkhir } = useWatch({ control });
 
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Grid container spacing={3}>
-         <Grid item xs={12}>
-             <Typography variant="h6" sx={{ mb: 2 }}>Input Data Pembelian</Typography>
-             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-                Masukkan data transaksi pembelian dari vendor/supplier
+        {/* HEADER SECTION */}
+        <Grid item xs={12}>
+             <Typography variant="h5" sx={{ mb: 1, fontWeight: 'bold' }}>Input Data Pembelian</Typography>
+             <Typography variant="body2" color="text.secondary">
+                Catat tagihan dari supplier/vendor (Accounts Payable)
              </Typography>
         </Grid>
 
-        {/* Baris 1: Tanggal */}
-        <Grid item xs={12} md={4}>
-          <RHFTextField name="tanggalPencatatan" label="Tanggal Pencatatan *" type="date" InputLabelProps={{ shrink: true }} />
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <RHFTextField name="tanggalInvoice" label="Tanggal Invoice *" type="date" InputLabelProps={{ shrink: true }} />
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <RHFTextField name="tanggalJatuhTempo" label="Tanggal Jatuh Tempo *" type="date" InputLabelProps={{ shrink: true }} />
+        {/* --- KOLOM KIRI: INFO FAKTUR --- */}
+        <Grid item xs={12} md={8}>
+          <Card sx={{ p: 3 }}>
+            <Typography variant="subtitle1" sx={{ mb: 3, color: 'text.secondary' }}>
+              Informasi Faktur & Vendor
+            </Typography>
+            <Box gap={2} display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }}>
+                {/* Tanggal */}
+                <DatePicker
+                    label="Tanggal Pencatatan"
+                    value={values.tanggal_pencatatan ? dayjs(values.tanggal_pencatatan) : null}
+                    onChange={(newValue) => setValue('tanggal_pencatatan', newValue?.toDate() ?? null)}
+                    slotProps={{ textField: { fullWidth: true } }}
+                />
+                <DatePicker
+                    label="Tanggal Invoice"
+                    value={values.tanggal_invoice ? dayjs(values.tanggal_invoice) : null}
+                    onChange={(newValue) => setValue('tanggal_invoice', newValue?.toDate() ?? null)}
+                    slotProps={{ textField: { fullWidth: true } }}
+                />
+                <DatePicker
+                    label="Jatuh Tempo"
+                    value={values.tanggal_jatuh_tempo ? dayjs(values.tanggal_jatuh_tempo) : null}
+                    onChange={(newValue) => setValue('tanggal_jatuh_tempo', newValue?.toDate() ?? null)}
+                    slotProps={{ textField: { fullWidth: true } }}
+                />
+                
+                {/* No Dokumen */}
+                <RHFTextField name="no_invoice" label="No. Invoice Supplier" placeholder="INV-..." />
+                <RHFTextField name="no_faktur" label="No. Faktur Pajak" placeholder="010..." />
+
+                {/* Vendor Select */}
+                <RHFAutocomplete
+                  name="vendor"
+                  label="Vendor/Supplier *"
+                  options={companies}
+                  onAddNew={() => setOpenAddVendor(true)} // Menyalakan fitur tambah baru
+                  addNewLabel="Tambah Vendor Baru"
+                />
+            </Box>
+          </Card>
         </Grid>
 
-        {/* Baris 2: Identitas & Vendor */}
+        {/* --- KOLOM KANAN: AKUN & PAJAK --- */}
         <Grid item xs={12} md={4}>
-          <RHFTextField name="noFaktur" label="No. Faktur" placeholder="Masukkan nomor faktur" />
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <RHFTextField name="noInvoice" label="No. Invoice" placeholder="Masukkan nomor invoice" />
-        </Grid>
-        <Grid item xs={12} md={4}>
-          {/* MENGGUNAKAN RHFAutocomplete AGAR LEBIH RAPI */}
-          <RHFAutocomplete
-            name="vendor"
-            label="Vendor/Supplier *"
-            options={companies}
-            onAddNew={() => setOpenAddVendor(true)} // Menyalakan fitur tambah baru
-            addNewLabel="Tambah Vendor Baru"
-          />
+            <Card sx={{ p: 3, height: '100%' }}>
+                <Typography variant="subtitle1" sx={{ mb: 3, color: 'text.secondary' }}>
+                   Akun Akuntansi & Pajak
+                </Typography>
+                <Stack spacing={3}>
+                  <RHFAutocomplete
+                    name="id_akun_debit"
+                    label="Akun Debit *"
+                    options={coaOptions}
+                  />
+
+                  <RHFAutocomplete
+                    name="id_akun_kredit"
+                    label="Akun Kredit *"
+                    options={coaOptions}
+                  />
+
+                  <RHFTextField select name="id_ppn_fk" label="Presentase PPN *">
+                      {ppnOptions.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
+                  </RHFTextField>
+
+                  <RHFTextField select name="id_pph_fk" label="Presentase PPh *">
+                      {pphOptions.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
+                  </RHFTextField>
+              </Stack>
+            </Card>
         </Grid>
 
-        {/* Baris 3: Akun (COA) */}
-        <Grid item xs={12} md={6}>
-          <RHFAutocomplete
-            name="akunDebit"
-            label="Akun Debit *"
-            options={coaOptions}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <RHFAutocomplete
-            name="akunKredit"
-            label="Akun Kredit *"
-            options={coaOptions}
-          />
-        </Grid>
-
-        {/* Baris 4: Detail Item & Subtotal */}
-        <Grid item xs={12} md={4}>
-          <RHFTextField name="qty" label="Qty *" type="number" placeholder="Masukkan qty" />
-        </Grid>
-        <Grid item xs={12} md={4}>
-             <RHFTextField 
-                name="hargaSatuan" 
-                label="Harga Satuan *" 
-                type="number" 
-                placeholder="Masukkan harga satuan"
-                InputProps={{
-                    startAdornment: <InputAdornment position="start">Rp</InputAdornment>,
-                }}
-            />
-        </Grid>
-        <Grid item xs={12} md={4}>
-           <Box sx={{ px: 1, py: 0.3, border: '1px solid #e0e0e0', borderRadius: 1}}>
-               <Typography variant="caption" color="text.secondary">Subtotal</Typography>
-               <Typography variant="subtitle1" color="primary">{formatCurrency(subtotal || 0)}</Typography>
-           </Box>
-        </Grid>
-
-        {/* Baris 5: Pajak & Total Akhir */}
-        <Grid item xs={12} md={4}>
-          <RHFTextField select name="persentasePPN" label="Presentase PPN *">
-             {ppnOptions.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
-          </RHFTextField>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <RHFTextField select name="persentasePPh" label="Presentase PPh *">
-             {pphOptions.map((op) => <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>)}
-          </RHFTextField>
-        </Grid>
-         <Grid item xs={12} md={4}>
-           <Box sx={{ px: 1, py: 0.3, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-               <Typography variant="caption" color="text.secondary">Total (Subtotal + PPN - PPh)</Typography>
-               <Typography variant="subtitle1" sx={{ color: 'success.main', fontWeight: 'bold' }}>{formatCurrency(totalAkhir || 0)}</Typography>
-           </Box>
-        </Grid>
-
-        {/* Baris 6: Summary / Rincian Akun Otomatis */}
+        {/* --- DETAIL ITEM PRODUK --- */}
         <Grid item xs={12}>
-          <Stack direction="row" justifyContent="space-between" sx={{ mt: 2, p: 1, borderRadius: 1 }}>
-              <Box>
-                  <Typography variant="caption" display="block" color="text.secondary">PPN Amount</Typography>
-                  <Typography variant="subtitle2" color="primary.main" fontWeight="bold">+ {formatCurrency(ppnAmount || 0)}</Typography>
-                  <Typography variant="subtitle2" color="success.main" fontWeight="bold">
-                    { ppnAmount &&  ppnAmount > 0 
-                      ? 'Hutang PPn'
-                      :  ' - '}
-                  </Typography>
-              </Box>
-              <Box>
-                  <Typography variant="caption" display="block" color="text.secondary">PPh Amount</Typography>
-                  <Typography variant="subtitle2" color="error.main" fontWeight="bold">- {formatCurrency(pphAmount || 0)}</Typography>
-                  <Typography variant="subtitle2" color="error.main" fontWeight="bold">
-                    { pphAmount && pphAmount > 0 ? 'Hutang Dibayar Dimuka' : ' - '}
-                  </Typography>
-              </Box>
-                <Box sx={{textAlign: 'right'}}>
-                  <Typography variant="caption" display="block" color="text.secondary">Subtotal Barang</Typography>
-                  <Typography variant="subtitle2" fontWeight="bold">{formatCurrency(subtotal || 0)}</Typography>
-              </Box>
-            </Stack>
+            <Card sx={{ p: 3 }}>
+                 <Typography variant="subtitle1" sx={{ mb: 2 }}>Rincian Barang / Jasa</Typography>
+                 
+                 {/* Komponen Tabel Produk (Reusable) */}
+                 <ProdukDetail />
+                 
+                 {/* SUMMARY BOX (Kanan Bawah) */}
+                 <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Stack spacing={1.5} sx={{ minWidth: 300, p: 2, bgcolor: 'background.neutral', borderRadius: 2 }}>
+                        <Stack direction="row" justifyContent="space-between">
+                            <Typography variant="body2">Total DPP</Typography>
+                            <Typography variant="body2" fontWeight="bold">{formatCurrency(values.total_dpp || 0)}</Typography>
+                        </Stack>
+                        
+                        <Stack direction="row" justifyContent="space-between">
+                            <Typography variant="body2">
+                              PPN (+) 
+                              <br /> { values.total_ppn &&  values.total_ppn > 0 ? 'Hutang PPn' :  ' - '}
+                              
+                            </Typography>
+                            <Typography variant="body2" color="success.main">{formatCurrency(values.total_ppn || 0)}</Typography>
+                        </Stack>
+
+                        <Stack direction="row" justifyContent="space-between">
+                            <Typography variant="body2">
+                              PPh (-)
+                              <br /> { values.total_pph &&  values.total_pph > 0 ? 'Hutang Di Bayar di Muka' :  ' - '}
+                              
+                              </Typography>
+                            <Typography variant="body2" color="error.main">({formatCurrency(values.total_pph || 0)})</Typography>
+                        </Stack>
+
+                        <Stack direction="row" justifyContent="space-between" sx={{ pt: 2, borderTop: '1px dashed grey' }}>
+                            <Typography variant="subtitle1">Total Transaksi</Typography>
+                            <Typography variant="subtitle1" color="primary">{formatCurrency(values.total_transaksi || 0)}</Typography>
+                        </Stack>
+                    </Stack>
+                 </Box>
+            </Card>
         </Grid>
+
+        {/* BUTTON ACTIONS */}
+        <Grid item xs={12} display="flex" justifyContent="flex-end" gap={2}>
+            <Button size="large" variant="outlined" color="inherit" onClick={() => reset()}>
+                Reset Form
+            </Button>
+            <LoadingButton 
+                type="submit" 
+                variant="contained" 
+                size="large"
+                color="primary"
+                loading={isSubmittingAPI} // Loading state dari Hook
+            >
+                Simpan Pembelian
+            </LoadingButton>
+        </Grid>
+
       </Grid>
 
-      {/* Tombol Aksi */}
-      <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
-        <Button
-          type="submit"
-          variant="contained"
-          color="success"
-          disabled={isSubmitting}
-          sx={{ px: 4, py: 1.2, fontWeight: 'bold' }}
-        >
-          Simpan Data Pembelian
-        </Button>
-        <Button
-          variant="outlined"
-          color="inherit"
-          onClick={() => reset()}
-          sx={{ px: 4, py: 1.2 }}
-        >
-          Reset
-        </Button>
-      </Stack>
-
-      {/* Dialog Tambah Vendor Baru */}
+      {/* --- DIALOG TAMBAH VENDOR (Dummy Logic) --- */}
       <Dialog open={openAddVendor} onClose={() => setOpenAddVendor(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Tambah Vendor Baru</DialogTitle>
         <DialogContent>
             <Box sx={{ mt: 1 }}>
                 <TextField
-                    autoFocus
-                    fullWidth
-                    label="Nama Vendor Baru"
-                    placeholder="Masukkan nama vendor baru"
+                    autoFocus fullWidth
+                    label="Nama Vendor"
                     value={newVendorName}
                     onChange={(e) => setNewVendorName(e.target.value)}
                 />
             </Box>
         </DialogContent>
         <DialogActions>
-            <Button onClick={() => setOpenAddVendor(false)} color="inherit">Batal</Button>
-            <Button onClick={handleAddNewVendor} variant="contained" color="primary">Tambah</Button>
+            <Button onClick={() => setOpenAddVendor(false)}>Batal</Button>
+            <Button variant="contained" onClick={() => {
+                alert('Fitur tambah vendor via modal belum connect API :)');
+                setOpenAddVendor(false);
+            }}>Simpan</Button>
         </DialogActions>
       </Dialog>
+
     </FormProvider>
   );
 }
