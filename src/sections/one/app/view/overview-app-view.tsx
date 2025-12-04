@@ -56,7 +56,6 @@ import TransactionTableRow from '../TransactionTableRow';
 const TABLE_HEAD = [
   { id: 'tanggal', label: 'Tanggal' },
   { id: 'no_invoice', label: 'No. Invoice' },
-  { id: 'akun', label: 'Akun' },
   { id: 'coa', label: 'COA' },
   { id: 'tipe', label: 'Tipe' },
   { id: 'nominal', label: 'Subtotal' },
@@ -84,6 +83,7 @@ export default function OverviewAppView() {
 
   // State Data
   const [tableData, setTableData] = useState([]);
+  const [totalData, setTotalData] = useState(0);
   const [summary, setSummary] = useState({
     total_dpp: 0,
     total_transaksi: 0,
@@ -97,8 +97,12 @@ export default function OverviewAppView() {
   // --- FETCH DATA DARI API (Server Side Filtering) ---
   const fetchData = useCallback(async () => {
     try {
-      const params: any = {};
+      const params: any = {
+        page: table.page + 1, // table.page MUI mulai dari 0, Backend page mulai dari 1
+        limit: table.rowsPerPage,
+      };
 
+      
       // Mapping Filter Frontend ke Backend API
       if (filters.status !== 'all') {
         params.type = filters.status;
@@ -116,6 +120,7 @@ export default function OverviewAppView() {
       
       setTableData(response.data.data);
       setSummary(response.data.summary);
+      setTotalData(response.data.meta.total_items);
 
     } catch (error) {
       console.error("Gagal load transaksi", error);
@@ -125,7 +130,7 @@ export default function OverviewAppView() {
   // Panggil fetch data saat filter berubah
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, table.page, table.rowsPerPage]);
   // ---------------------------------------------------
 
   const dataFiltered = tableData; // Karena filtering sudah di server, dataFiltered = tableData
@@ -296,10 +301,6 @@ export default function OverviewAppView() {
 
               <TableBody>
                 {dataFiltered
-                  .slice(
-                    table.page * table.rowsPerPage,
-                    table.page * table.rowsPerPage + table.rowsPerPage
-                  )
                   .map((row: any) => (
                     <TransactionTableRow
                       key={row.id_transaksi}
@@ -323,7 +324,7 @@ export default function OverviewAppView() {
         </TableContainer>
 
         <TablePaginationCustom
-          count={dataFiltered.length}
+          count={totalData}
           page={table.page}
           rowsPerPage={table.rowsPerPage}
           onPageChange={table.onChangePage}

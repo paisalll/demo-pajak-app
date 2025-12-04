@@ -97,7 +97,7 @@ export default function AppWidgetSummary({ title, percent, total, chart, sx, ...
           </Typography>
         </Stack>
 
-        <Typography variant="h3">{fNumber(total)}</Typography>
+        <Typography variant="h5">Rp. {fNumber(total)}</Typography>
       </Box>
 
       {/* <Chart type="bar" series={[{ data: series }]} options={chartOptions} width={60} height={36} /> */}
