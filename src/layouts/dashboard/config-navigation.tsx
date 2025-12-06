@@ -58,6 +58,22 @@ export function useNavData() {
             path: paths.dashboard.three,
             icon: ICONS.analytics,
           },
+          {
+            title: 'Master',
+            path: paths.dashboard.master.root,
+            roles: ['admin'],
+            icon: ICONS.label,
+            children: [
+              {
+                title: 'COA',
+                path: paths.dashboard.master.coa,
+              },
+              {
+                title: 'Vendor',
+                path: paths.dashboard.master.vendor,
+              },
+            ],
+          },
         ],
       },
 

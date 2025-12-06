@@ -70,8 +70,6 @@ export default function ThreeView() {
   const table = useTable({ defaultOrderBy: 'created_at' });
   const confirm = useBoolean();
   
-
-  // STATE
   type Invoice = (typeof _appInvoices)[number];
   const [currentTab, setCurrentTab] = useState<'list' | 'detail'>('list'); // 'list' | 'detail'
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(_appInvoices[0] ?? null);
@@ -87,14 +85,11 @@ export default function ThreeView() {
     total_pembelian: 0,
     total_penjualan: 0,
   });
-  // STATE FILTER
-  const [filters, setFilters] = useState(defaultFilters);
-  // ... imports dan setup variables
 
   // STATE FILTER
-  // Default string 'Semua Bulan' agar match dengan MenuItem
+  const [filters, setFilters] = useState(defaultFilters);
+
   const [filterMonth, setFilterMonth] = useState('Semua Bulan'); 
-  // Default tahun sekarang (2025)
   const [filterYear, setFilterYear] = useState(new Date().getFullYear()); 
 
   const fetchData = useCallback(async () => {
@@ -207,6 +202,44 @@ export default function ThreeView() {
     [router]
   );
 
+  const getExportParams = () => {
+    const params = new URLSearchParams();
+
+    // 1. Filter Bulan
+    if (filterMonth !== 'Semua Bulan') {
+      params.append('month', filterMonth);
+    }
+
+    // 2. Filter Tahun
+    if (filterYear !== 0) {
+      params.append('year', String(filterYear));
+    }
+
+    // 3. Filter Tipe (Penjualan/Pembelian)
+    if (filters.status !== 'all') {
+      params.append('type', filters.status);
+    }
+
+    // 4. Filter Search
+    if (filters.name) {
+      params.append('search', filters.name);
+    }
+
+    return params.toString();
+  };
+
+  const handleExport = () => {
+    const queryString = getExportParams();
+    const url = `${import.meta.env.VITE_HOST_API}/reports/excel?${queryString}`;
+    window.open(url, '_blank');
+  };
+
+  // Handler Print (PDF)
+  const handlePrint = () => {
+    const queryString = getExportParams();
+    const url = `${import.meta.env.VITE_HOST_API}/reports/pdf-summary?${queryString}`;
+    window.open(url, '_blank');
+  };
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       
@@ -288,7 +321,7 @@ export default function ThreeView() {
                   variant="outlined"
                   // ICON: Printer
                   startIcon={<Iconify icon="solar:printer-minimalistic-bold" />}
-                  onClick={() => {}}
+                  onClick={handlePrint}
                 >
                   Print
                 </Button>
@@ -298,7 +331,7 @@ export default function ThreeView() {
                   color="success"
                   // ICON: Export / Download
                   startIcon={<Iconify icon="solar:export-bold" />}
-                  onClick={() => {}}
+                  onClick={handleExport}
                 >
                   Export CSV
                 </Button>
