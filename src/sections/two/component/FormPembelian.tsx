@@ -18,7 +18,7 @@ import ProdukDetail from './ProdukDetail'; // Pastikan path benar
 // Hooks & API
 import useMasterData from '../api/useMasterData'; // Untuk ambil data vendor/coa
 import useCreateTransaction from '../api/useTransaction';
-import { TransactionFormValues } from './utils';
+import { DUE_DATE_OPTIONS, TransactionFormValues } from './utils';
 import RHFAutocomplete from 'src/components/hook-form/rhf-auto-complete';
 import { useSnackbar } from 'src/components/snackbar';
 
@@ -50,8 +50,11 @@ export default function FormPembelian() {
       tanggal_pencatatan: new Date(),
       tanggal_invoice: new Date(),
       tanggal_jatuh_tempo: new Date(),
+      due_date: 30, 
       no_invoice: '',
       no_faktur: '',
+      nama_proyek: '',
+      pengaju: '',
       id_partner: '',
       id_akun_debit: '',
       id_akun_kredit: '',
@@ -120,6 +123,20 @@ export default function FormPembelian() {
     values.id_pph_fk
   ]); 
 
+    useEffect(() => {
+      // Ambil tanggal pencatatan & due date
+      const startDate = values.tanggal_pencatatan ? new Date(values.tanggal_pencatatan) : new Date();
+      const daysToAdd = Number(values.due_date || 0);
+  
+      // Hitung tanggal baru
+      const dueDate = new Date(startDate);
+      dueDate.setDate(dueDate.getDate() + daysToAdd);
+  
+      // Set nilai ke field tanggal_jatuh_tempo
+      setValue('tanggal_jatuh_tempo', dueDate);
+      
+    }, [values.tanggal_pencatatan, values.due_date]); // Re-calc jika tanggal pencatatan atau due date berubah
+
   // 4. Submit Handler
   const onSubmit = async (data: TransactionFormValues) => {
     try {
@@ -174,37 +191,46 @@ export default function FormPembelian() {
             </Typography>
             <Box gap={2} display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }}>
                 {/* Tanggal */}
-                <DatePicker
+                {/* <DatePicker
                     label="Tanggal Pencatatan"
                     value={values.tanggal_pencatatan ? dayjs(values.tanggal_pencatatan) : null}
                     onChange={(newValue) => setValue('tanggal_pencatatan', newValue?.toDate() ?? null)}
                     slotProps={{ textField: { fullWidth: true } }}
-                />
+                /> */}
                 <DatePicker
                     label="Tanggal Invoice"
                     value={values.tanggal_invoice ? dayjs(values.tanggal_invoice) : null}
                     onChange={(newValue) => setValue('tanggal_invoice', newValue?.toDate() ?? null)}
                     slotProps={{ textField: { fullWidth: true } }}
                 />
+                <RHFAutocomplete
+                  name="due_date"
+                  label="Due Date (Termin Hari)"
+                  required
+                  options={DUE_DATE_OPTIONS}
+                />
                 <DatePicker
                     label="Jatuh Tempo"
+                    disabled
                     value={values.tanggal_jatuh_tempo ? dayjs(values.tanggal_jatuh_tempo) : null}
                     onChange={(newValue) => setValue('tanggal_jatuh_tempo', newValue?.toDate() ?? null)}
                     slotProps={{ textField: { fullWidth: true } }}
                 />
                 
-                {/* No Dokumen */}
-                <RHFTextField name="no_invoice" label="No. Invoice Supplier" placeholder="INV-..." />
-                <RHFTextField name="no_faktur" label="No. Faktur Pajak" placeholder="010..." />
-
                 {/* Vendor Select */}
                 <RHFAutocomplete
-                  name="vendor"
+                  name="id_company"
                   label="Vendor/Supplier *"
                   options={companies}
                   onAddNew={() => setOpenAddVendor(true)} // Menyalakan fitur tambah baru
                   addNewLabel="Tambah Vendor Baru"
                 />
+
+                {/* No Dokumen */}
+                <RHFTextField name="no_invoice" label="No. Invoice Supplier" placeholder="INV-..." />
+                <RHFTextField name="no_faktur" label="No. Faktur Pajak" placeholder="010..." />
+                <RHFTextField name="nama_proyek" label="Nama Proyek / Kegiatan" placeholder="Proyek ABC..." />
+                <RHFTextField name="pengaju" label="Nama Pengaju" placeholder="Nama Pengaju..." />
             </Box>
           </Card>
         </Grid>

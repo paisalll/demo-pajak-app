@@ -10,6 +10,7 @@ export interface TransactionFormValues {
   id_company: string;
   tanggal_pencatatan: Date | null;
   tanggal_invoice: Date | null;
+  due_date: number | string;
   tanggal_jatuh_tempo: Date | null;
   no_invoice: string;
   no_faktur: string;
@@ -19,6 +20,10 @@ export interface TransactionFormValues {
   id_akun_kredit: string;
   id_ppn_fk: number | string; // Bisa string dari select, nanti convert ke number
   id_pph_fk: number | string;
+  nama_proyek?: string;
+  nama_sales?: string;
+  pengaju?: string;
+
   
   products: ProductItem[];
   
@@ -28,6 +33,13 @@ export interface TransactionFormValues {
   total_pph: number;
   total_transaksi: number;
 }
+
+export const DUE_DATE_OPTIONS = [
+  { label: '15 Hari', value: 15 },
+  { label: '30 Hari', value: 30 },
+  { label: '45 Hari', value: 45 },
+  { label: '60 Hari', value: 60 },
+]
  
  export const INITIAL_CUSTOMERS = [
   { label: 'PT Maju Jaya', value: 'PT Maju Jaya' },
