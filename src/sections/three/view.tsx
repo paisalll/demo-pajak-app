@@ -5,15 +5,16 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Unstable_Grid2';
 import Card from '@mui/material/Card';
 import Box from '@mui/material/Box';
-import FormControl from '@mui/material/FormControl';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import LoadingButton from '@mui/lab/LoadingButton';
+
 import { 
   DataGrid, 
   GridColDef, 
@@ -26,198 +27,56 @@ import {
 
 // components
 import Iconify from 'src/components/iconify'; 
-import Label from 'src/components/label';
 import { useSettingsContext } from 'src/components/settings';
+import { useSnackbar } from 'src/components/snackbar';
+import { ConfirmDialog } from 'src/components/custom-dialog';
 
 // utils
 import axios, { endpoints } from 'src/utils/axios';
-import { fCurrency } from 'src/utils/format-number';
-import { useRouter } from 'src/routes/hooks';
-import { paths } from 'src/routes/paths';
-import AppWidgetSummary from './app-widget-summary';
-import { format } from 'date-fns';
-import Scrollbar from 'src/components/scrollbar';
-import { Divider } from '@mui/material';
-import InvoiceAnalytic from '../one/app/invoice-analytic';
 
 // ----------------------------------------------------------------------
 
-const MONTHS = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-];
-
-const START_YEAR = 2023;
-const YEARS = Array.from({ length: 7 }, (_, i) => START_YEAR + i);
-
-const defaultFilters = {
-  name: '',
-  status: 'all', // status disini kita pakai untuk 'type' (penjualan/pembelian)
-  startDate: null,
-  endDate: null,
-};
-
-export default function ThreeView() {
-  const theme = useTheme();
+export default function CoaListView() {
   const settings = useSettingsContext();
-  const router = useRouter();
+  const { enqueueSnackbar } = useSnackbar();
 
   // STATE DATA
   const [tableData, setTableData] = useState([]);
   const [totalData, setTotalData] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   
-  // STATE SUMMARY
-  const [summary, setSummary] = useState({
-    total_dpp: 0,
-    total_transaksi: 0,
-    total_ppn: 0,
-    total_pph: 0,
-    net_pajak: 0,
-    total_pembelian: 0,
-    total_penjualan: 0,
-  });
-
-  // STATE FILTER
-  const [filters, setFilters] = useState(defaultFilters);
-  const [filterMonth, setFilterMonth] = useState('Semua Bulan'); 
-  const [filterYear, setFilterYear] = useState(new Date().getFullYear()); 
-
-  // STATE PAGINATION DATAGRID
+  // STATE PAGINATION
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
-    page: 0, // DataGrid mulai dari 0
+    page: 0,
     pageSize: 10,
   });
 
-  // --- DEFINISI KOLOM DATAGRID ---
+  // STATE MODAL FORM
+  const [openForm, setOpenForm] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [formData, setFormData] = useState({ id_coa: '', nama_akun: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // STATE DELETE CONFIRM
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // --- COLUMNS ---
   const columns: GridColDef[] = useMemo(() => [
-    {
-      field: 'no_invoice',
-      headerName: 'No. Invoice',
-      width: 180,
+    { 
+      field: 'id_coa', 
+      headerName: 'Kode Akun (COA)', 
+      flex: 1,
+      minWidth: 150,
       renderCell: (params: GridRenderCellParams) => (
-        <Stack>
-          <Typography variant="body2" fontWeight="bold">{params.value}</Typography>
-          <Typography variant="caption" color="text.secondary">{params.row.no_faktur || '-'}</Typography>
-        </Stack>
+        <Typography variant="body2" fontWeight="bold">{params.value}</Typography>
       )
     },
     {
-      field: 'tanggal_pencatatan',
-      headerName: 'Tanggal',
-      width: 120,
-      valueFormatter: (params: any) => {
-        return format(new Date(params), 'dd MMM yyyy');
-      }
-    },
-    {
-      field: 'due_date',
-      headerName: 'Jatuh Tempo',
-      width: 120,
-      valueFormatter: (params: any) => {
-         return `${params} hari`
-      }
-    },
-    {
-      field: 'tanggal_jatuh_tempo',
-      headerName: 'Tanggal Jatuh Tempo',
-      width: 120,
-      valueFormatter: (params: any) => {
-        return format(new Date(params), 'dd MMM yyyy');
-      }
-    },
-    {
-      field: 'partner',
-      headerName: 'Partner / Customer',
-      width: 200,
-      renderCell: (params: GridRenderCellParams) => (
-        <Stack>
-          <Typography variant="body2" fontWeight="bold">{params.row.m_company?.nama_perusahaan}</Typography>
-        </Stack>
-      )
-    },
-    {
-      field: 'transaksi_jurnal',
-      headerName: 'Akun COA',
-      width: 180,
-      renderCell: (params: GridRenderCellParams) => (
-        <Stack>
-          {console.log(params)}
-          
-          {params.value?.map((item: any) => (
-            <Typography key={item.id_akun} variant="body2">{item.m_coa?.id_coa} -{item.m_coa?.nama_akun}</Typography>
-          ))}
-        </Stack>
-      )
-    },
-    {
-      field: 'type',
-      headerName: 'Tipe',
-      width: 120,
-      renderCell: (params: GridRenderCellParams) => (
-        <Label
-          variant="soft"
-          color={params.value === 'penjualan' ? 'success' : 'info'}
-          sx={{ textTransform: 'capitalize' }}
-        >
-          {params.value}
-        </Label>
-      ),
-    },
-    {
-      field: 'status_pembayaran',
-      headerName: 'Status',
-      width: 130,
-      renderCell: (params: GridRenderCellParams) => (
-        <Label
-          variant="soft"
-          color={params.value === 1 ? 'success' : 'error'}
-        >
-          {params.value === 1 ? 'Paid' : 'Unpaid'}
-        </Label>
-      ),
-    },
-    {
-      field: 'total_dpp',
-      headerName: 'DPP',
-      width: 150,
-      type: 'number',
-      valueFormatter: (params: any) => {
-        return fCurrency(params);
-      }
-    },
-    {
-      field: 'total_ppn',
-      headerName: 'PPN',
-      width: 140,
-      type: 'number',
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography sx={{mt: 1}} variant="body2" fontWeight="bold" color="primary.main">
-            +{fCurrency(params.value)}
-        </Typography>
-      )
-    },
-    {
-      field: 'total_pph',
-      headerName: 'PPH',
-      width: 140,
-      type: 'number',
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography sx={{mt: 1}} variant="body2" fontWeight="bold" color="error.main">
-            -{fCurrency(params.value)}
-        </Typography>
-      )
-    },
-    {
-      field: 'total_transaksi',
-      headerName: 'Total Transaksi',
-      width: 160,
-      type: 'number',
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography sx={{mt: 1}} variant="body2" fontWeight="bold" color="primary.main">
-            {fCurrency(params.value)}
-        </Typography>
-      )
+      field: 'nama_akun',
+      headerName: 'Nama Akun',
+      flex: 2,
+      minWidth: 250,
     },
     {
       field: 'actions',
@@ -226,274 +85,204 @@ export default function ThreeView() {
       width: 100,
       getActions: (params: GridRowParams) => [
         <GridActionsCellItem
-          icon={<Iconify icon="solar:printer-minimalistic-bold" />}
-          label="Print"
-          onClick={() => window.open(`${import.meta.env.VITE_HOST_API}/reports/pdf/${params.id}`, '_blank')}
+          key="edit"
+          icon={<Iconify icon="solar:pen-bold" />}
+          label="Edit"
+          onClick={() => handleOpenEdit(params.row)}
+          showInMenu
         />,
-        // <GridActionsCellItem
-        //   icon={<Iconify icon="solar:pen-bold" />}
-        //   label="Edit"
-        //   onClick={() => router.push(paths.dashboard.transaction.edit(params.id as string))}
-        // />,
+        <GridActionsCellItem
+          key="delete"
+          icon={<Iconify icon="solar:trash-bin-trash-bold" color="error.main" />}
+          label="Delete"
+          onClick={() => {
+             setDeleteId(params.id as string);
+             setOpenConfirm(true);
+          }}
+          showInMenu
+        />,
       ],
     },
-  ], [router]);
-
+  ], []);
 
   // --- FETCH DATA ---
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params: any = {
-        page: paginationModel.page + 1, // DataGrid (0-based) -> API (1-based)
-        limit: paginationModel.pageSize,
-      };
+      // Sesuaikan endpoint get list COA Anda
+      // Jika endpoint Anda support pagination, kirim params page/limit.
+      // Jika tidak (ambil semua), pagination dilakukan di client-side (DataGrid bisa handle).
+      // Asumsi: Endpoint '/master/coa' mengambil SEMUA data (karena master data biasanya sedikit)
       
-      // Filter Logic
-      if (filters.status !== 'all') params.type = filters.status;
-      if (filters.name) params.search = filters.name;
-      if (filterMonth !== 'Semua Bulan') params.month = Number(filterMonth);
-      if (filterYear !== 0) params.year = filterYear;
-
-      const response = await axios.get(endpoints.transaction, { params });
-      
-      setTableData(response.data.data);
-      setSummary(response.data.summary);
-      setTotalData(response.data.meta.total_items);
+      const response = await axios.get(endpoints.master.coa.root); 
+      // Jika response backend Anda array langsung: response.data
+      // Jika response backend terbungkus: response.data.data
+      setTableData(response.data);
+      setTotalData(response.data.length);
 
     } catch (error) {
-      console.error("Gagal load transaksi", error);
+      console.error("Gagal load COA", error);
+      enqueueSnackbar('Gagal mengambil data COA', { variant: 'error' });
     } finally {
       setIsLoading(false);
     }
-  }, [filters, paginationModel, filterMonth, filterYear]);
+  }, []);
 
-  // Effect fetch data
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-
-  // --- HANDLERS ---
-  const handleFilterMonth = (event: SelectChangeEvent) => {
-    setFilterMonth(event.target.value);
-    setPaginationModel(prev => ({ ...prev, page: 0 })); // Reset ke halaman 1
+  // --- HANDLERS FORM ---
+  const handleOpenAdd = () => {
+    setIsEdit(false);
+    setFormData({ id_coa: '', nama_akun: '' });
+    setOpenForm(true);
   };
 
-  const handleFilterYear = (event: SelectChangeEvent) => {
-    setFilterYear(Number(event.target.value));
-    setPaginationModel(prev => ({ ...prev, page: 0 }));
+  const handleOpenEdit = (row: any) => {
+    setIsEdit(true);
+    setFormData({ id_coa: row.id_coa, nama_akun: row.nama_akun });
+    setOpenForm(true);
   };
 
-  const handleResetFilter = () => {
-    setFilterMonth('Semua Bulan');
-    setFilterYear(new Date().getFullYear());
-    setFilters(defaultFilters);
-    setPaginationModel(prev => ({ ...prev, page: 0 }));
+  const handleCloseForm = () => {
+    setOpenForm(false);
   };
 
-  const handleFilterStatus = (event: React.SyntheticEvent, newValue: string) => {
-    setFilters(prev => ({ ...prev, status: newValue }));
-    setPaginationModel(prev => ({ ...prev, page: 0 }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // TABS CONFIGURATION
-  const TABS = [
-    { value: 'all', label: 'All', color: 'default', count: totalData },
-    { value: 'penjualan', label: 'Penjualan', color: 'success', count: summary.total_penjualan > 0 ? '...' : 0 },
-    { value: 'pembelian', label: 'Pembelian', color: 'info', count: summary.total_pembelian > 0 ? '...' : 0 },
-  ] as const;
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      if (isEdit) {
+        // Edit
+        await axios.put(`${endpoints.master.coa.root}/${formData.id_coa}`, formData);
+        enqueueSnackbar('Update berhasil!');
+      } else {
+        // Create
+        await axios.post(endpoints.master.coa.root, formData);
+        enqueueSnackbar('Buat COA baru berhasil!');
+      }
+      fetchData(); // Refresh table
+      handleCloseForm();
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Gagal menyimpan data', { variant: 'error' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // --- HANDLERS DELETE ---
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await axios.delete(`${endpoints.master.coa.root}/${deleteId}`);
+      enqueueSnackbar('Hapus data berhasil!');
+      fetchData();
+      setOpenConfirm(false);
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Gagal menghapus data. Mungkin sedang digunakan di transaksi.', { variant: 'error' });
+    }
+  };
 
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
+    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       
-      {/* HEADER SECTION (Sama seperti sebelumnya) */}
-      <Card sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid xs={12} md={12}>
-            <Stack direction="row" alignItems="center" gap={2}>
-              <Box>
-                <Typography variant="h5" fontWeight="bold">Laporan Pajak</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  Data Grid View dengan Filter & Pagination Server-side
-                </Typography>
-              </Box>
-            </Stack>
-          </Grid>
-
-          {/* FILTER DROPDOWNS */}
-          <Grid xs={12} md={4}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>Bulan</Typography>
-            <FormControl fullWidth size="small">
-              <Select value={filterMonth} onChange={handleFilterMonth}>
-                <MenuItem value="Semua Bulan">Semua Bulan</MenuItem>
-                {MONTHS.map((month, index) => (
-                  <MenuItem key={month} value={String(index + 1)}>{month}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid xs={12} md={4}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>Tahun</Typography>
-            <FormControl fullWidth size="small">
-              <Select value={String(filterYear)} onChange={handleFilterYear}>
-                <MenuItem value={0}>Semua Tahun</MenuItem>
-                {YEARS.map((year) => (
-                  <MenuItem key={year} value={year}>{year}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid xs={12} md={4}>
-             <Typography variant="subtitle2" sx={{ mb: 1 }}>&nbsp;</Typography>
-            <Button
-              fullWidth
-              variant="soft"
-              color="info"
-              onClick={handleResetFilter}
-              startIcon={<Iconify icon="solar:restart-bold" />} 
-            >
-              Reset Filter
-            </Button>
-          </Grid>
-        </Grid>
-      </Card>
-
-      {/* WIDGETS SUMMARY */}
-      <Card sx={{ mb: { xs: 3, md: 5 } }}>
-        <Scrollbar>
-          <Stack
-            direction="row"
-            divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
-            sx={{ py: 2 }}
-          >
-            <InvoiceAnalytic
-              title="Total Transaksi"
-              total={totalData}
-              percent={100}
-              price={summary.total_transaksi}
-              icon="solar:bill-list-bold-duotone"
-              color={theme.palette.info.main} // theme.palette.primary.main  
-            />
-
-            <InvoiceAnalytic
-              title="Total DPP"
-              total={totalData}
-              percent={100}
-              price={summary.total_dpp}
-              icon="solar:file-check-bold-duotone"
-              color={theme.palette.success.main} // theme.palette.success.main
-            />
-
-            <InvoiceAnalytic
-              title="Total PPN"
-              total={totalData}
-              percent={100}
-              price={summary.total_ppn}
-              icon="solar:sort-by-time-bold-duotone"
-              color={theme.palette.warning.main} // theme.palette.warning.main
-            />
-              
-              {/* Menampilkan Net Pajak */}
-            <InvoiceAnalytic
-              title="Net Pajak (PPN - PPh)"
-              total={totalData}
-              percent={100}
-              price={summary.net_pajak}
-              icon="solar:bell-bing-bold-duotone"
-              color={theme.palette.error.main} // theme.palette.error.main
-            />
-            <InvoiceAnalytic
-              title="Total Penjualan"
-              total={totalData}
-              percent={100}
-              price={summary.total_penjualan}
-              icon="solar:graph-new-up-bold-duotone"
-              color={theme.palette.success.main} // theme.palette.error.main
-            />
-            <InvoiceAnalytic
-              title="Total Pembelian"
-              total={totalData}
-              percent={100}
-              price={summary.total_pembelian}
-              icon="solar:graph-down-new-bold-duotone"
-              color={theme.palette.error.main} // theme.palette.error.main
-            />
-          </Stack>
-        </Scrollbar>
-      </Card>
-
-      {/* DATA GRID AREA */}
-      <Card>
-        {/* TABS FILTER */}
-        <Tabs
-          value={filters.status}
-          onChange={handleFilterStatus}
-          sx={{
-            px: 2.5,
-            boxShadow: (theme) => `inset 0 -2px 0 0 ${(theme.palette.grey[500], 0.08)}`,
-          }}
+      {/* HEADER */}
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+        <Typography variant="h4">Master Chart of Accounts (COA)</Typography>
+        <Button
+          variant="contained"
+          startIcon={<Iconify icon="eva:plus-fill" />}
+          onClick={handleOpenAdd}
         >
-          {TABS.map((tab) => (
-            <Tab
-              key={tab.value}
-              value={tab.value}
-              label={tab.label}
-              iconPosition="end"
-              icon={
-                <Label variant={((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'} color={tab.color}>
-                  {tab.count}
-                </Label>
-              }
-            />
-          ))}
-        </Tabs>
+          Tambah Akun
+        </Button>
+      </Stack>
 
-        {/* DATA GRID */}
+      {/* DATA GRID */}
+      <Card>
         <Box sx={{ height: 600, width: '100%' }}>
             <DataGrid
-                // Data Props
                 rows={tableData}
                 columns={columns}
-                getRowId={(row) => row.id_transaksi} // Wajib karena ID kita 'id_transaksi' bukan 'id'
-                rowCount={totalData} // Total data dari Backend untuk pagination
+                getRowId={(row) => row.id_coa}
                 loading={isLoading}
                 
-                // Pagination Props (Server Side)
-                paginationMode="server"
+                // Pagination Client-Side (Karena data master biasanya < 1000 baris)
+                // Jika ingin server-side, ganti prop seperti di TransactionView
                 paginationModel={paginationModel}
                 onPaginationModelChange={setPaginationModel}
-                pageSizeOptions={[5, 10, 25, 50]}
+                pageSizeOptions={[10, 25, 50]}
                 
-                // Toolbar
                 slots={{ toolbar: GridToolbar }}
                 slotProps={{
                     toolbar: {
-                      showQuickFilter: true,
-                      quickFilterProps: { debounceMs: 500 }, // Delay search agar tidak spam API (opsional)
-                      printOptions: { disableToolbarButton: false }, // Pastikan tombol print muncul
-                      csvOptions: { disableToolbarButton: false }, // Pastikan tombol CSV muncul
-                      
-                      // Logic CSS untuk Search Kanan & Tombol Kiri
-                      sx: {
-                          p: 2,
-                          // Selector class untuk Quick Filter
-                          '& .MuiDataGrid-toolbarQuickFilter': {
-                              marginLeft: 'auto', // Dorong ke kanan mentok
-                              width: 250 // Lebar search bar
-                          }
-                      } // Search Bar bawaan DataGrid (Client side search)
+                        showQuickFilter: true,
+                        quickFilterProps: { debounceMs: 500 },
                     },
                 }}
-
-                // Styling
                 disableRowSelectionOnClick
             />
         </Box>
       </Card>
-      
+
+      {/* MODAL FORM ADD/EDIT */}
+      <Dialog open={openForm} onClose={handleCloseForm} maxWidth="sm" fullWidth>
+        <DialogTitle>{isEdit ? 'Edit Akun COA' : 'Tambah Akun Baru'}</DialogTitle>
+        <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+                <TextField
+                    label="Kode Akun (ID COA)"
+                    name="id_coa"
+                    value={formData.id_coa}
+                    onChange={handleChange}
+                    disabled={isEdit} // Primary Key tidak boleh diedit
+                    fullWidth
+                    required
+                    helperText="Contoh: 1-1000"
+                />
+                <TextField
+                    label="Nama Akun"
+                    name="nama_akun"
+                    value={formData.nama_akun}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    helperText="Contoh: Kas Besar, Piutang Usaha"
+                />
+            </Stack>
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={handleCloseForm} color="inherit">Batal</Button>
+            <LoadingButton 
+                onClick={handleSubmit} 
+                variant="contained" 
+                loading={isSubmitting}
+                disabled={!formData.id_coa || !formData.nama_akun}
+            >
+                Simpan
+            </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      {/* DIALOG CONFIRM DELETE */}
+      <ConfirmDialog
+        open={openConfirm}
+        onClose={() => setOpenConfirm(false)}
+        title="Hapus Akun"
+        content="Apakah Anda yakin ingin menghapus akun COA ini? Data yang dihapus tidak dapat dikembalikan."
+        action={
+          <Button variant="contained" color="error" onClick={handleDelete}>
+            Hapus
+          </Button>
+        }
+      />
+
     </Container>
   );
 }

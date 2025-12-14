@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import axios, { endpoints } from 'src/utils/axios';
 
 export default function useMasterData() {
+  const [coa, setCoa] = useState<any[]>([]);
   const [vendors, setVendors] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
   const [coaOptions, setCoaOptions] = useState<any[]>([]);
@@ -43,6 +44,7 @@ export default function useMasterData() {
           value: item.id_coa 
         }));
         setCoaOptions(coaData);
+        setCoa(resCoa.data);
 
         // 3. Mapping PPN
         const ppnData = resPpn.data.map((item: any) => ({
@@ -78,6 +80,8 @@ export default function useMasterData() {
     pphOptions,
     companies,
     setCompanies,
+    coa,
+    fetchMasterData: () => {}, // Placeholder jika butuh fungsi refresh manual
     isLoading
   };
 }

@@ -54,9 +54,9 @@ export function useNavData() {
           { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
           { title: 'Input', path: paths.dashboard.two, icon: ICONS.order },
           {
-            title: 'Laporan',
+            title: 'COA',
             path: paths.dashboard.three,
-            icon: ICONS.analytics,
+            icon: ICONS.banking,
           },
           {
             title: 'Master',

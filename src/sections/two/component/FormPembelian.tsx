@@ -36,7 +36,7 @@ export default function FormPembelian() {
   
   // 1. Hooks API
   const { createTransaction, isLoading: isSubmittingAPI } = useCreateTransaction();
-  const { companies, coaOptions, ppnOptions, pphOptions } = useMasterData(); // Ambil data master
+  const { companies, coaOptions, ppnOptions, pphOptions } = useMasterData();
 
   // State untuk Tambah Vendor Cepat (Optional)
   const [openAddVendor, setOpenAddVendor] = useState(false);

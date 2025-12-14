@@ -19,9 +19,9 @@ export const paths = {
   // DASHBOARD
   dashboard: {
     root: ROOTS.DASHBOARD,
-    one: `${ROOTS.DASHBOARD}/one`,
-    two: `${ROOTS.DASHBOARD}/two`,
-    three: `${ROOTS.DASHBOARD}/three`,
+    one: `${ROOTS.DASHBOARD}`,
+    two: `${ROOTS.DASHBOARD}/input`,
+    three: `${ROOTS.DASHBOARD}/coa`,
     master: {
       root: `${ROOTS.DASHBOARD}/master`,
       coa: `${ROOTS.DASHBOARD}/master/coa`,
