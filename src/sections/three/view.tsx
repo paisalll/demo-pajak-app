@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 // @mui
 import { useTheme } from '@mui/material/styles';
 import Container from '@mui/material/Container';
@@ -12,40 +12,36 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import { 
+  DataGrid, 
+  GridColDef, 
+  GridToolbar, 
+  GridPaginationModel,
+  GridActionsCellItem,
+  GridRowParams,
+  GridRenderCellParams,
+} from '@mui/x-data-grid';
 
 // components
-import Iconify from 'src/components/iconify'; // <--- Import Iconify
-import { useMockedUser } from 'src/hooks/use-mocked-user';
+import Iconify from 'src/components/iconify'; 
+import Label from 'src/components/label';
 import { useSettingsContext } from 'src/components/settings';
 
-// _mock
-import { _appInvoices } from 'src/_mock';
-
-// components (Custom Anda)
-import AppNewInvoice from './app-new-invoice';
-import AppWidgetSummary from './app-widget-summary';
-import { emptyRows, TableEmptyRows, TableHeadCustom, TableNoData, TablePaginationCustom, TableSelectedAction, useTable } from 'src/components/table';
+// utils
 import axios, { endpoints } from 'src/utils/axios';
+import { fCurrency } from 'src/utils/format-number';
 import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
-import { Tab, Table, TableBody, TableContainer, Tabs, Tooltip } from '@mui/material';
-import Label from 'src/components/label';
-import { useBoolean } from 'src/hooks/use-boolean';
+import AppWidgetSummary from './app-widget-summary';
+import { format } from 'date-fns';
 import Scrollbar from 'src/components/scrollbar';
-import TransactionTableRow from './TransactionTableRow';
+import { Divider } from '@mui/material';
+import InvoiceAnalytic from '../one/app/invoice-analytic';
 
 // ----------------------------------------------------------------------
 
-const TABLE_HEAD = [
-  { id: 'tanggal', label: 'Tanggal' },
-  { id: 'no_invoice', label: 'No. Invoice' },
-  { id: 'coa', label: 'COA' },
-  { id: 'tipe', label: 'Tipe' },
-  { id: 'nominal', label: 'Subtotal' },
-  { id: 'total', label: 'Total Transaksi' },
-  { id: 'pajak', label: 'Net Pajak' },
-  { id: '' },
-];
 const MONTHS = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -60,22 +56,18 @@ const defaultFilters = {
   startDate: null,
   endDate: null,
 };
-// ----------------------------------------------------------------------
 
 export default function ThreeView() {
-  const { user } = useMockedUser();
   const theme = useTheme();
   const settings = useSettingsContext();
   const router = useRouter();
-  const table = useTable({ defaultOrderBy: 'created_at' });
-  const confirm = useBoolean();
-  
-  type Invoice = (typeof _appInvoices)[number];
-  const [currentTab, setCurrentTab] = useState<'list' | 'detail'>('list'); // 'list' | 'detail'
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(_appInvoices[0] ?? null);
-  
+
+  // STATE DATA
   const [tableData, setTableData] = useState([]);
   const [totalData, setTotalData] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // STATE SUMMARY
   const [summary, setSummary] = useState({
     total_dpp: 0,
     total_transaksi: 0,
@@ -88,32 +80,180 @@ export default function ThreeView() {
 
   // STATE FILTER
   const [filters, setFilters] = useState(defaultFilters);
-
   const [filterMonth, setFilterMonth] = useState('Semua Bulan'); 
   const [filterYear, setFilterYear] = useState(new Date().getFullYear()); 
 
+  // STATE PAGINATION DATAGRID
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0, // DataGrid mulai dari 0
+    pageSize: 10,
+  });
+
+  // --- DEFINISI KOLOM DATAGRID ---
+  const columns: GridColDef[] = useMemo(() => [
+    {
+      field: 'no_invoice',
+      headerName: 'No. Invoice',
+      width: 180,
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack>
+          <Typography variant="body2" fontWeight="bold">{params.value}</Typography>
+          <Typography variant="caption" color="text.secondary">{params.row.no_faktur || '-'}</Typography>
+        </Stack>
+      )
+    },
+    {
+      field: 'tanggal_pencatatan',
+      headerName: 'Tanggal',
+      width: 120,
+      valueFormatter: (params: any) => {
+        return format(new Date(params), 'dd MMM yyyy');
+      }
+    },
+    {
+      field: 'due_date',
+      headerName: 'Jatuh Tempo',
+      width: 120,
+      valueFormatter: (params: any) => {
+         return `${params} hari`
+      }
+    },
+    {
+      field: 'tanggal_jatuh_tempo',
+      headerName: 'Tanggal Jatuh Tempo',
+      width: 120,
+      valueFormatter: (params: any) => {
+        return format(new Date(params), 'dd MMM yyyy');
+      }
+    },
+    {
+      field: 'partner',
+      headerName: 'Partner / Customer',
+      width: 200,
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack>
+          <Typography variant="body2" fontWeight="bold">{params.row.m_company?.nama_perusahaan}</Typography>
+        </Stack>
+      )
+    },
+    {
+      field: 'transaksi_jurnal',
+      headerName: 'Akun COA',
+      width: 180,
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack>
+          {console.log(params)}
+          
+          {params.value?.map((item: any) => (
+            <Typography key={item.id_akun} variant="body2">{item.m_coa?.id_coa} -{item.m_coa?.nama_akun}</Typography>
+          ))}
+        </Stack>
+      )
+    },
+    {
+      field: 'type',
+      headerName: 'Tipe',
+      width: 120,
+      renderCell: (params: GridRenderCellParams) => (
+        <Label
+          variant="soft"
+          color={params.value === 'penjualan' ? 'success' : 'info'}
+          sx={{ textTransform: 'capitalize' }}
+        >
+          {params.value}
+        </Label>
+      ),
+    },
+    {
+      field: 'status_pembayaran',
+      headerName: 'Status',
+      width: 130,
+      renderCell: (params: GridRenderCellParams) => (
+        <Label
+          variant="soft"
+          color={params.value === 1 ? 'success' : 'error'}
+        >
+          {params.value === 1 ? 'Paid' : 'Unpaid'}
+        </Label>
+      ),
+    },
+    {
+      field: 'total_dpp',
+      headerName: 'DPP',
+      width: 150,
+      type: 'number',
+      valueFormatter: (params: any) => {
+        return fCurrency(params);
+      }
+    },
+    {
+      field: 'total_ppn',
+      headerName: 'PPN',
+      width: 140,
+      type: 'number',
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography sx={{mt: 1}} variant="body2" fontWeight="bold" color="primary.main">
+            +{fCurrency(params.value)}
+        </Typography>
+      )
+    },
+    {
+      field: 'total_pph',
+      headerName: 'PPH',
+      width: 140,
+      type: 'number',
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography sx={{mt: 1}} variant="body2" fontWeight="bold" color="error.main">
+            -{fCurrency(params.value)}
+        </Typography>
+      )
+    },
+    {
+      field: 'total_transaksi',
+      headerName: 'Total Transaksi',
+      width: 160,
+      type: 'number',
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography sx={{mt: 1}} variant="body2" fontWeight="bold" color="primary.main">
+            {fCurrency(params.value)}
+        </Typography>
+      )
+    },
+    {
+      field: 'actions',
+      type: 'actions',
+      headerName: 'Aksi',
+      width: 100,
+      getActions: (params: GridRowParams) => [
+        <GridActionsCellItem
+          icon={<Iconify icon="solar:printer-minimalistic-bold" />}
+          label="Print"
+          onClick={() => window.open(`${import.meta.env.VITE_HOST_API}/reports/pdf/${params.id}`, '_blank')}
+        />,
+        // <GridActionsCellItem
+        //   icon={<Iconify icon="solar:pen-bold" />}
+        //   label="Edit"
+        //   onClick={() => router.push(paths.dashboard.transaction.edit(params.id as string))}
+        // />,
+      ],
+    },
+  ], [router]);
+
+
+  // --- FETCH DATA ---
   const fetchData = useCallback(async () => {
+    setIsLoading(true);
     try {
       const params: any = {
-        page: table.page + 1,
-        limit: table.rowsPerPage,
+        page: paginationModel.page + 1, // DataGrid (0-based) -> API (1-based)
+        limit: paginationModel.pageSize,
       };
       
-      if (filters.status !== 'all') {
-        params.type = filters.status;
-      }
-
-      if (filters.name) {
-        params.search = filters.name;
-      }
-
-      if (filterMonth !== 'Semua Bulan') {
-        params.month = Number(filterMonth);
-      }
-
-      if (filterYear !== 0) {
-        params.year = filterYear;
-      }
+      // Filter Logic
+      if (filters.status !== 'all') params.type = filters.status;
+      if (filters.name) params.search = filters.name;
+      if (filterMonth !== 'Semua Bulan') params.month = Number(filterMonth);
+      if (filterYear !== 0) params.year = filterYear;
 
       const response = await axios.get(endpoints.transaction, { params });
       
@@ -123,245 +263,171 @@ export default function ThreeView() {
 
     } catch (error) {
       console.error("Gagal load transaksi", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [filters, table.page, table.rowsPerPage, filterMonth, filterYear]); // <--- Dependency ditambah filterMonth & filterYear
+  }, [filters, paginationModel, filterMonth, filterYear]);
 
+  // Effect fetch data
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // HANDLERS
+
+  // --- HANDLERS ---
   const handleFilterMonth = (event: SelectChangeEvent) => {
     setFilterMonth(event.target.value);
-    table.onResetPage(); // Reset ke halaman 1 setiap ganti filter
+    setPaginationModel(prev => ({ ...prev, page: 0 })); // Reset ke halaman 1
   };
 
   const handleFilterYear = (event: SelectChangeEvent) => {
     setFilterYear(Number(event.target.value));
-    table.onResetPage(); // Reset ke halaman 1
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
   };
 
   const handleResetFilter = () => {
     setFilterMonth('Semua Bulan');
-    setFilterYear(new Date().getFullYear()); // Reset ke tahun sekarang
-    setFilters(defaultFilters); // Reset filter type/search juga jika perlu
-    table.onResetPage();
+    setFilterYear(new Date().getFullYear());
+    setFilters(defaultFilters);
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
   };
 
-  const handleViewDetail = useCallback((id: string) => {
-    const invoice = _appInvoices.find((i) => i.id === id);
-    if (invoice) {
-      setSelectedInvoice(invoice);
-      setCurrentTab('detail');
-    }
-  }, []);
-
-  const handleBackToList = () => {
-    setCurrentTab('list');
-    setSelectedInvoice(null);
+  const handleFilterStatus = (event: React.SyntheticEvent, newValue: string) => {
+    setFilters(prev => ({ ...prev, status: newValue }));
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
   };
 
+  // TABS CONFIGURATION
   const TABS = [
-    { value: 'all', label: 'All', color: 'default', count: tableData.length },
-    { value: 'penjualan', label: 'Penjualan', color: 'success', count: tableData.filter((i:any) => i.type === 'penjualan').length },
-    { value: 'pembelian', label: 'Pembelian', color: 'info', count: tableData.filter((i:any) => i.type === 'pembelian').length },
+    { value: 'all', label: 'All', color: 'default', count: totalData },
+    { value: 'penjualan', label: 'Penjualan', color: 'success', count: summary.total_penjualan > 0 ? '...' : 0 },
+    { value: 'pembelian', label: 'Pembelian', color: 'info', count: summary.total_pembelian > 0 ? '...' : 0 },
   ] as const;
 
-  const handleFilters = useCallback(
-    (name: string, value: any) => {
-      table.onResetPage();
-      setFilters((prevState) => ({
-        ...prevState,
-        [name]: value,
-      }));
-    },
-    [table]
-  );
-
-  const dataFiltered = tableData; // Karena filtering sudah di server, dataFiltered = tableData
-
-  const denseHeight = table.dense ? 56 : 76;
-  const notFound = !dataFiltered.length;
-  const handleFilterStatus = useCallback(
-    (event: React.SyntheticEvent, newValue: string) => {
-      handleFilters('status', newValue);
-    },
-    [handleFilters]
-  );
-
-  const handleDeleteRow = useCallback(async (id: string) => {
-      // Logic Delete API here
-      // await axios.delete(endpoints.transaction + `/${id}`);
-      // fetchData();
-  }, []);
-
-  const handleEditRow = useCallback(
-    (id: string) => {
-      router.push(paths.dashboard.two);
-    },
-    [router]
-  );
-
-  const getExportParams = () => {
-    const params = new URLSearchParams();
-
-    // 1. Filter Bulan
-    if (filterMonth !== 'Semua Bulan') {
-      params.append('month', filterMonth);
-    }
-
-    // 2. Filter Tahun
-    if (filterYear !== 0) {
-      params.append('year', String(filterYear));
-    }
-
-    // 3. Filter Tipe (Penjualan/Pembelian)
-    if (filters.status !== 'all') {
-      params.append('type', filters.status);
-    }
-
-    // 4. Filter Search
-    if (filters.name) {
-      params.append('search', filters.name);
-    }
-
-    return params.toString();
-  };
-
-  const handleExport = () => {
-    const queryString = getExportParams();
-    const url = `${import.meta.env.VITE_HOST_API}/reports/excel?${queryString}`;
-    window.open(url, '_blank');
-  };
-
-  // Handler Print (PDF)
-  const handlePrint = () => {
-    const queryString = getExportParams();
-    const url = `${import.meta.env.VITE_HOST_API}/reports/pdf-summary?${queryString}`;
-    window.open(url, '_blank');
-  };
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
+    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       
-      {/* HEADER SECTION */}
+      {/* HEADER SECTION (Sama seperti sebelumnya) */}
       <Card sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          
-          {/* JUDUL & SUB JUDUL */}
           <Grid xs={12} md={12}>
             <Stack direction="row" alignItems="center" gap={2}>
-              {currentTab === 'detail' && (
-                <IconButton onClick={handleBackToList}>
-                  {/* ICON: Back Arrow */}
-                  <Iconify icon="solar:arrow-left-bold" />
-                </IconButton>
-              )}
               <Box>
-                <Typography variant="h5" fontWeight="bold">
-                  {currentTab === 'detail' ? `Detail Invoice: ${selectedInvoice?.invoiceNumber || '-'}` : 'Laporan Pajak'}
-                </Typography>
+                <Typography variant="h5" fontWeight="bold">Laporan Pajak</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  {currentTab === 'detail' 
-                    ? 'Lihat detail lengkap data pajak invoice ini' 
-                    : 'Filter dan ekspor laporan data pajak'}
+                  Data Grid View dengan Filter & Pagination Server-side
                 </Typography>
               </Box>
             </Stack>
           </Grid>
 
-          {/* FILTER SECTION (Hanya tampil jika sedang di List View) */}
-          {currentTab === 'list' && (
-            <>
-              {/* FILTER BULAN */}
-              <Grid xs={12} md={4}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>Bulan</Typography>
-                <FormControl fullWidth size="medium">
-                  <Select value={filterMonth} onChange={handleFilterMonth}>
-                    <MenuItem value="Semua Bulan">Semua Bulan</MenuItem>
-                    {MONTHS.map((month, index) => (
-                      <MenuItem key={month} value={String(index + 1)}>{month}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+          {/* FILTER DROPDOWNS */}
+          <Grid xs={12} md={4}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>Bulan</Typography>
+            <FormControl fullWidth size="small">
+              <Select value={filterMonth} onChange={handleFilterMonth}>
+                <MenuItem value="Semua Bulan">Semua Bulan</MenuItem>
+                {MONTHS.map((month, index) => (
+                  <MenuItem key={month} value={String(index + 1)}>{month}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
 
-              {/* FILTER TAHUN */}
-              <Grid xs={12} md={4}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>Tahun</Typography>
-                <FormControl fullWidth size="medium">
-                  <Select value={String(filterYear)} onChange={(e: any) => handleFilterYear(e)}>
-                    <MenuItem value={0}>Semua Tahun</MenuItem>
-                    {YEARS.map((year) => (
-                      <MenuItem key={year} value={year}>{year}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+          <Grid xs={12} md={4}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>Tahun</Typography>
+            <FormControl fullWidth size="small">
+              <Select value={String(filterYear)} onChange={handleFilterYear}>
+                <MenuItem value={0}>Semua Tahun</MenuItem>
+                {YEARS.map((year) => (
+                  <MenuItem key={year} value={year}>{year}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
 
-              {/* RESET FILTER */}
-              <Grid xs={12} md={4}>
-                 <Typography variant="subtitle2" sx={{ mb: 1 }}>&nbsp;</Typography>
-                <Button
-                  fullWidth
-                  variant="soft"
-                  color="info"
-                  size="large"
-                  onClick={handleResetFilter}
-                  // ICON: Refresh / Restart
-                  startIcon={<Iconify icon="solar:restart-bold" />} 
-                  sx={{ height: 53 }}
-                >
-                  Reset Filter
-                </Button>
-              </Grid>
-
-              {/* ACTION BUTTONS */}
-              <Grid xs={12} display="flex" justifyContent="flex-end" gap={2} mt={1}>
-                <Button
-                  variant="outlined"
-                  // ICON: Printer
-                  startIcon={<Iconify icon="solar:printer-minimalistic-bold" />}
-                  onClick={handlePrint}
-                >
-                  Print
-                </Button>
-
-                <Button
-                  variant="contained"
-                  color="success"
-                  // ICON: Export / Download
-                  startIcon={<Iconify icon="solar:export-bold" />}
-                  onClick={handleExport}
-                >
-                  Export CSV
-                </Button>
-              </Grid>
-            </>
-          )}
+          <Grid xs={12} md={4}>
+             <Typography variant="subtitle2" sx={{ mb: 1 }}>&nbsp;</Typography>
+            <Button
+              fullWidth
+              variant="soft"
+              color="info"
+              onClick={handleResetFilter}
+              startIcon={<Iconify icon="solar:restart-bold" />} 
+            >
+              Reset Filter
+            </Button>
+          </Grid>
         </Grid>
       </Card>
 
       {/* WIDGETS SUMMARY */}
-      {currentTab === 'list' && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid xs={12} md={3}>
-            <AppWidgetSummary title="Total Pembelian" percent={2.6} total={summary.total_pembelian} />
-          </Grid>
-          <Grid xs={12} md={3}>
-            <AppWidgetSummary title="Total Penjualan" percent={0.2} total={summary.total_penjualan} />
-          </Grid>
-          <Grid xs={12} md={3}>
-            <AppWidgetSummary title="Total Pajak" percent={-0.1} total={summary.net_pajak} />
-          </Grid>
-          <Grid xs={12} md={3}>
-            <AppWidgetSummary title="Total Transaksi" percent={-0.1} total={summary.total_transaksi} />
-          </Grid>
-        </Grid>
-      )}
+      <Card sx={{ mb: { xs: 3, md: 5 } }}>
+        <Scrollbar>
+          <Stack
+            direction="row"
+            divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
+            sx={{ py: 2 }}
+          >
+            <InvoiceAnalytic
+              title="Total Transaksi"
+              total={totalData}
+              percent={100}
+              price={summary.total_transaksi}
+              icon="solar:bill-list-bold-duotone"
+              color={theme.palette.info.main} // theme.palette.primary.main  
+            />
 
-      {/* MAIN CONTENT AREA */}
+            <InvoiceAnalytic
+              title="Total DPP"
+              total={totalData}
+              percent={100}
+              price={summary.total_dpp}
+              icon="solar:file-check-bold-duotone"
+              color={theme.palette.success.main} // theme.palette.success.main
+            />
+
+            <InvoiceAnalytic
+              title="Total PPN"
+              total={totalData}
+              percent={100}
+              price={summary.total_ppn}
+              icon="solar:sort-by-time-bold-duotone"
+              color={theme.palette.warning.main} // theme.palette.warning.main
+            />
+              
+              {/* Menampilkan Net Pajak */}
+            <InvoiceAnalytic
+              title="Net Pajak (PPN - PPh)"
+              total={totalData}
+              percent={100}
+              price={summary.net_pajak}
+              icon="solar:bell-bing-bold-duotone"
+              color={theme.palette.error.main} // theme.palette.error.main
+            />
+            <InvoiceAnalytic
+              title="Total Penjualan"
+              total={totalData}
+              percent={100}
+              price={summary.total_penjualan}
+              icon="solar:graph-new-up-bold-duotone"
+              color={theme.palette.success.main} // theme.palette.error.main
+            />
+            <InvoiceAnalytic
+              title="Total Pembelian"
+              total={totalData}
+              percent={100}
+              price={summary.total_pembelian}
+              icon="solar:graph-down-new-bold-duotone"
+              color={theme.palette.error.main} // theme.palette.error.main
+            />
+          </Stack>
+        </Scrollbar>
+      </Card>
+
+      {/* DATA GRID AREA */}
       <Card>
-        {/* --- TABS FILTER (All / Penjualan / Pembelian) --- */}
+        {/* TABS FILTER */}
         <Tabs
           value={filters.status}
           onChange={handleFilterStatus}
@@ -377,10 +443,7 @@ export default function ThreeView() {
               label={tab.label}
               iconPosition="end"
               icon={
-                <Label
-                  variant={((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'}
-                  color={tab.color}
-                >
+                <Label variant={((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'} color={tab.color}>
                   {tab.count}
                 </Label>
               }
@@ -388,76 +451,47 @@ export default function ThreeView() {
           ))}
         </Tabs>
 
-        {/* --- TOOLBAR (Search & Date) --- */}
-        {/* Anda bisa menggunakan komponen InvoiceTableToolbar bawaan template, 
-            cukup mapping props onFilters-nya */}
-        
-        <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
-          <TableSelectedAction
-            dense={table.dense}
-            numSelected={table.selected.length}
-            rowCount={tableData.length}
-            onSelectAllRows={(checked) =>
-              table.onSelectAllRows(checked, tableData.map((row: any) => row.id_transaksi))
-            }
-            action={
-              <Stack direction="row">
-                <Tooltip title="Delete">
-                  <IconButton color="primary" onClick={confirm.onTrue}>
-                    <Iconify icon="solar:trash-bin-trash-bold" />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            }
-          />
+        {/* DATA GRID */}
+        <Box sx={{ height: 600, width: '100%' }}>
+            <DataGrid
+                // Data Props
+                rows={tableData}
+                columns={columns}
+                getRowId={(row) => row.id_transaksi} // Wajib karena ID kita 'id_transaksi' bukan 'id'
+                rowCount={totalData} // Total data dari Backend untuk pagination
+                loading={isLoading}
+                
+                // Pagination Props (Server Side)
+                paginationMode="server"
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                pageSizeOptions={[5, 10, 25, 50]}
+                
+                // Toolbar
+                slots={{ toolbar: GridToolbar }}
+                slotProps={{
+                    toolbar: {
+                      showQuickFilter: true,
+                      quickFilterProps: { debounceMs: 500 }, // Delay search agar tidak spam API (opsional)
+                      printOptions: { disableToolbarButton: false }, // Pastikan tombol print muncul
+                      csvOptions: { disableToolbarButton: false }, // Pastikan tombol CSV muncul
+                      
+                      // Logic CSS untuk Search Kanan & Tombol Kiri
+                      sx: {
+                          p: 2,
+                          // Selector class untuk Quick Filter
+                          '& .MuiDataGrid-toolbarQuickFilter': {
+                              marginLeft: 'auto', // Dorong ke kanan mentok
+                              width: 250 // Lebar search bar
+                          }
+                      } // Search Bar bawaan DataGrid (Client side search)
+                    },
+                }}
 
-          <Scrollbar>
-            <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
-              <TableHeadCustom
-                order={table.order}
-                orderBy={table.orderBy}
-                headLabel={TABLE_HEAD}
-                rowCount={tableData.length}
-                numSelected={table.selected.length}
-                onSort={table.onSort}
-                onSelectAllRows={(checked) =>
-                  table.onSelectAllRows(checked, tableData.map((row: any) => row.id_transaksi))
-                }
-              />
-
-              <TableBody>
-                {dataFiltered
-                  .map((row: any) => (
-                    <TransactionTableRow
-                      key={row.id_transaksi}
-                      row={row}
-                      selected={table.selected.includes(row.id_transaksi)}
-                      onSelectRow={() => table.onSelectRow(row.id_transaksi)}
-                      onEditRow={() => handleEditRow(row.id_transaksi)}
-                      onDeleteRow={() => handleDeleteRow(row.id_transaksi)}
-                    />
-                  ))}
-
-                <TableEmptyRows
-                  height={denseHeight}
-                  emptyRows={emptyRows(table.page, table.rowsPerPage, tableData.length)}
-                />
-
-                <TableNoData notFound={notFound} />
-              </TableBody>
-            </Table>
-          </Scrollbar>
-        </TableContainer>
-
-        <TablePaginationCustom
-          count={totalData}
-          page={table.page}
-          rowsPerPage={table.rowsPerPage}
-          onPageChange={table.onChangePage}
-          onRowsPerPageChange={table.onChangeRowsPerPage}
-          dense={table.dense}
-          onChangeDense={table.onChangeDense}
-        />
+                // Styling
+                disableRowSelectionOnClick
+            />
+        </Box>
       </Card>
       
     </Container>

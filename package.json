@@ -38,6 +38,7 @@
     "@mui/icons-material": "^5.18.0",
     "@mui/lab": "^5.0.0-alpha.142",
     "@mui/material": "^5.18.0",
+    "@mui/x-data-grid": "^8.22.0",
     "@mui/x-date-pickers": "^8.19.0",
     "apexcharts": "^5.3.6",
     "autosuggest-highlight": "^3.3.4",

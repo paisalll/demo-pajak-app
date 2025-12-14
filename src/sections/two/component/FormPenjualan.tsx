@@ -281,14 +281,14 @@ export default function FormPenjualan() {
                       <Typography variant="caption" display="block" color="text.secondary">PPN Amount</Typography>
                       <Typography variant="subtitle2" color="primary.main" fontWeight="bold">+ {formatCurrency(values.total_ppn || 0)}</Typography>
                       <Typography variant="subtitle2" color="success.main" fontWeight="bold">
-                        { values.total_ppn &&  values.total_ppn > 0 ? 'Hutang PPn' :  ' - '}
+                        { values.total_ppn &&  values.total_ppn > 0 ? 'utang PPN Keluaran' :  ' - '}
                       </Typography>
                   </Box>
                   <Box>
                       <Typography variant="caption" display="block" color="text.secondary">PPh Amount</Typography>
                       <Typography variant="subtitle2" color="error.main" fontWeight="bold">- {formatCurrency(values.total_pph || 0)}</Typography>
                       <Typography variant="subtitle2" color="error.main" fontWeight="bold">
-                        { values.total_pph && values.total_pph > 0 ? 'Hutang Dibayar Dimuka' : ' - '}
+                        { values.total_pph && values.total_pph > 0 ? 'Pajak Dibayar Dimuka - PPh Final 4 (2)' : ' - '}
                       </Typography>
                   </Box>
                   <Box >

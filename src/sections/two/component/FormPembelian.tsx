@@ -284,7 +284,7 @@ export default function FormPembelian() {
                         <Stack direction="row" justifyContent="space-between">
                             <Typography variant="body2">
                               PPN (+) 
-                              <br /> { values.total_ppn &&  values.total_ppn > 0 ? 'Hutang PPn' :  ' - '}
+                              <br /> { values.total_ppn &&  values.total_ppn > 0 ? 'Pajak Dibayar Dimuka - PPN Masukan' :  ' - '}
                               
                             </Typography>
                             <Typography variant="body2" color="success.main">{formatCurrency(values.total_ppn || 0)}</Typography>
@@ -293,7 +293,7 @@ export default function FormPembelian() {
                         <Stack direction="row" justifyContent="space-between">
                             <Typography variant="body2">
                               PPh (-)
-                              <br /> { values.total_pph &&  values.total_pph > 0 ? 'Hutang Di Bayar di Muka' :  ' - '}
+                              <br /> { values.total_pph &&  values.total_pph > 0 ? 'Pajak Dibayar Dimuka - PPh Final 4 (2)' :  ' - '}
                               
                               </Typography>
                             <Typography variant="body2" color="error.main">({formatCurrency(values.total_pph || 0)})</Typography>

@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 // sections
-import {OverviewAppView} from 'src/sections/one/app/view';
+import ThreeView from 'src/sections/three/view';
 
 // ----------------------------------------------------------------------
 
@@ -11,7 +11,7 @@ export default function Page() {
         <title> Dashboard: One</title>
       </Helmet>
 
-      <OverviewAppView />
+      <ThreeView />
     </>
   );
 }
