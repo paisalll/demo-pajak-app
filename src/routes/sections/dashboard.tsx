@@ -32,7 +32,12 @@ export const dashboardRoutes = [
     ),
     children: [
       { element: <IndexPage />, index: true },
-      { path: 'input', element: <PageTwo /> },
+      { path: 'input', 
+        children: [
+          { element: <PageTwo />, index: true },
+          { path: 'detail/:id', element: <PageTwo /> },
+        ],
+      },
       { path: 'coa', element: <PageThree /> },
       {
         path: 'group',

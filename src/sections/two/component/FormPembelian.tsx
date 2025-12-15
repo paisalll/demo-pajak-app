@@ -28,14 +28,18 @@ const formatCurrency = (val: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
 
 // ----------------------------------------------------------------------
+type Props = {
+  isEdit?: boolean;
+  currentData?: any; // Ganti 'any' dengan Interface Transaksi Anda
+};
 
-export default function FormPembelian() {
+export default function FormPembelian({ isEdit, currentData }: Props) {
   const navigate = useNavigate();
   
   const { enqueueSnackbar } = useSnackbar();
   
   // 1. Hooks API
-  const { createTransaction, isLoading: isSubmittingAPI } = useCreateTransaction();
+  const { createTransaction, updateTransaction, isLoading: isSubmittingAPI } = useCreateTransaction();
   const { companies, coaOptions, ppnOptions, pphOptions } = useMasterData();
 
   // State untuk Tambah Vendor Cepat (Optional)
@@ -123,21 +127,89 @@ export default function FormPembelian() {
     values.id_pph_fk
   ]); 
 
-    useEffect(() => {
-      // Ambil tanggal pencatatan & due date
-      const startDate = values.tanggal_pencatatan ? new Date(values.tanggal_pencatatan) : new Date();
-      const daysToAdd = Number(values.due_date || 0);
-  
-      // Hitung tanggal baru
-      const dueDate = new Date(startDate);
-      dueDate.setDate(dueDate.getDate() + daysToAdd);
-  
-      // Set nilai ke field tanggal_jatuh_tempo
-      setValue('tanggal_jatuh_tempo', dueDate);
-      
-    }, [values.tanggal_pencatatan, values.due_date]); // Re-calc jika tanggal pencatatan atau due date berubah
+  useEffect(() => {
+    // Ambil tanggal pencatatan & due date
+    const startDate = values.tanggal_pencatatan ? new Date(values.tanggal_pencatatan) : new Date();
+    const daysToAdd = Number(values.due_date || 0);
 
-  // 4. Submit Handler
+    // Hitung tanggal baru
+    const dueDate = new Date(startDate);
+    dueDate.setDate(dueDate.getDate() + daysToAdd);
+
+    // Set nilai ke field tanggal_jatuh_tempo
+    setValue('tanggal_jatuh_tempo', dueDate);
+    
+  }, [values.tanggal_pencatatan, values.due_date]); // Re-calc jika tanggal pencatatan atau due date berubah
+
+  useEffect(() => {
+    if (isEdit && currentData) {
+      
+      // 1. Set Header Fields
+      setValue('type', 'pembelian'); // Pastikan tipe benar
+      setValue('id_company', currentData.m_company?.id_company || ''); // ID Vendor
+      
+      // Tanggal (Convert string ISO ke Date object)
+      setValue('tanggal_pencatatan', currentData.tanggal_pencatatan ? new Date(currentData.tanggal_pencatatan) : new Date());
+      setValue('tanggal_invoice', currentData.tanggal_invoice ? new Date(currentData.tanggal_invoice) : new Date());
+      setValue('tanggal_jatuh_tempo', currentData.tanggal_jatuh_tempo ? new Date(currentData.tanggal_jatuh_tempo) : new Date());
+      setValue('due_date', currentData.due_date || 30);
+
+      // Info Faktur
+      setValue('no_invoice', currentData.no_invoice || '');
+      setValue('no_faktur', currentData.no_faktur || '');
+      setValue('nama_proyek', currentData.nama_proyek || '');
+      setValue('pengaju', currentData.pengaju || '');
+
+      // 2. Set Akun & Pajak
+      // Kita perlu cari ID akun dari jurnal. Logic-nya:
+      // Pembelian -> Akun Kredit (Hutang) & Akun Debit (Biaya)
+      // Helper function untuk cari akun di jurnal (asumsi data jurnal ada di currentData.transaksi_jurnal)
+      const findAccount = (posisi: 'debit' | 'kredit') => {
+         // Filter jurnal yang BUKAN pajak (id_coa tidak sama dengan akun pajak di master)
+         // Atau ambil jurnal akun utama (biasanya nominalnya paling besar atau sama dengan total transaksi/DPP)
+         // Simplifikasi: Ambil akun pertama sesuai posisi
+         const jurnal = currentData.transaksi_jurnal?.find((j: any) => j.posisi === posisi);
+         return jurnal?.id_coa_fk || '';
+      };
+      
+      // Karena logic backend create/update jurnal kompleks, saat edit kita set manual
+      // atau jika Anda menyimpan id_akun_debit/kredit di header (opsional) bisa langsung ambil.
+      // Jika data jurnal lengkap, kita bisa mapping balik.
+      // Di sini saya asumsikan Anda ingin user memilih ulang/memastikan akun benar:
+      // ATAU jika backend Anda menyimpan ID akun inputan user, gunakan field tersebut.
+      
+      // Jika Backend HANYA simpan di jurnal, Anda perlu logic pintar untuk menebak mana akun utama.
+      // Contoh sederhana: Ambil jurnal pertama Debit & Kredit.
+      if (currentData.transaksi_jurnal) {
+         const debitEntry = currentData.transaksi_jurnal.find((j: any) => j.posisi === 'debit' && /* Logic exclude PPN/PPh */ true);
+         const kreditEntry = currentData.transaksi_jurnal.find((j: any) => j.posisi === 'kredit' && /* Logic exclude PPN/PPh */ true);
+         
+         if (debitEntry) setValue('id_akun_debit', debitEntry.id_coa_fk);
+         if (kreditEntry) setValue('id_akun_kredit', kreditEntry.id_coa_fk);
+      }
+
+      // Pajak (ID PPN & PPh disimpan di header, jadi aman)
+      setValue('id_ppn_fk', currentData.id_ppn_fk ? String(currentData.id_ppn_fk) : ''); // Select butuh string
+      setValue('id_pph_fk', currentData.id_pph_fk ? String(currentData.id_pph_fk) : '');
+
+      // 3. Set Produk (Mapping Detail)
+      if (currentData.transaksi_detail && currentData.transaksi_detail.length > 0) {
+        const mappedProducts = currentData.transaksi_detail.map((item: any) => ({
+            nama_produk: item.nama_produk,
+            deskripsi: item.deskripsi || '',
+            qty: Number(item.qty),
+            harga_satuan: Number(item.harga_satuan),
+            sub_total: Number(item.sub_total)
+        }));
+        setValue('products', mappedProducts);
+      } else {
+        setValue('products', [{ nama_produk: '', deskripsi: '', qty: 1, harga_satuan: 0, sub_total: 0 }]);
+      }
+
+      // Trigger perhitungan total akan otomatis jalan karena useEffect Calculation (dependensi values)
+    }
+  }, [isEdit, currentData, setValue]);
+
   const onSubmit = async (data: TransactionFormValues) => {
     try {
       const payload = {
@@ -310,9 +382,9 @@ export default function FormPembelian() {
 
         {/* BUTTON ACTIONS */}
         <Grid item xs={12} display="flex" justifyContent="flex-end" gap={2}>
-            <Button size="large" variant="outlined" color="inherit" onClick={() => reset()}>
+            {!isEdit && <Button size="large" variant="outlined" color="inherit" onClick={() => reset()}>
                 Reset Form
-            </Button>
+            </Button>}
             <LoadingButton 
                 type="submit" 
                 variant="contained" 
@@ -320,7 +392,7 @@ export default function FormPembelian() {
                 color="primary"
                 loading={isSubmittingAPI} // Loading state dari Hook
             >
-                Simpan Pembelian
+                {isEdit ? 'Update Penjualan' : 'Simpan Penjualan'}
             </LoadingButton>
         </Grid>
 

@@ -56,8 +56,28 @@ export default function useCreateTransaction() {
     }
   };
 
+  const updateTransaction = async (payload: TransactionPayload, id: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Pastikan endpoint di axios.ts Anda mengarah ke '/transactions'
+      const response = await axios.patch(`${endpoints.transaction}/${id}`, payload);
+      return response.data; // Return data jika sukses
+    } catch (err: any) {
+      console.error('Gagal membuat transaksi:', err);
+      const errMsg = err.response?.data?.message || 'Terjadi kesalahan saat menyimpan transaksi';
+      setError(errMsg);
+      enqueueSnackbar(errMsg, { variant: 'error' });
+      throw err; // Lempar error agar bisa di-catch di component form
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return { 
     createTransaction, 
+    updateTransaction,
     isLoading, 
     error 
   };

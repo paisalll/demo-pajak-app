@@ -270,13 +270,16 @@ export default function OverViewDashboard() {
         <GridActionsCellItem
           icon={<Iconify icon="solar:trash-bin-minimalistic-bold" />}
           label="Delete"
-          onClick={() => window.open(`${import.meta.env.VITE_HOST_API}/reports/pdf/${params.id}`, '_blank')}
-        />,
+          onClick={() => window.open(`${import.meta.env.VITE_HOST_API}/reports/pdf/${encodeURIComponent(params.id as string)}`, '_blank')}
+          />,
         <GridActionsCellItem
           icon={<Iconify icon="solar:pen-bold" />}
           label="Edit"
-          onClick={() => router.push(paths.dashboard.one)}
-        />,
+          onClick={() => {
+            const safeId = encodeURIComponent(params.id as string); 
+            router.push(paths.dashboard.detail(safeId));
+          }}
+          />,
       ],
     },
   ], [router]);

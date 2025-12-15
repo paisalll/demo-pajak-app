@@ -158,7 +158,7 @@ export default function CoaListView() {
     try {
       if (isEdit) {
         // Edit
-        await axios.put(`${endpoints.master.coa.root}/${formData.id_coa}`, formData);
+        await axios.patch(`${endpoints.master.coa.root}/${formData.id_coa}`, formData);
         enqueueSnackbar('Update berhasil!');
       } else {
         // Create
