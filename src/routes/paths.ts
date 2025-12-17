@@ -25,8 +25,10 @@ export const paths = {
     three: `${ROOTS.DASHBOARD}/coa`,
     master: {
       root: `${ROOTS.DASHBOARD}/master`,
-      coa: `${ROOTS.DASHBOARD}/master/coa`,
+      users: `${ROOTS.DASHBOARD}/master/users`,
       vendor: `${ROOTS.DASHBOARD}/master/vendor`,
+      customer: `${ROOTS.DASHBOARD}/master/customer`,
+      tax: `${ROOTS.DASHBOARD}/master/tax`,
     },
   },
 };

@@ -37,6 +37,7 @@ export const endpoints = {
     register: '/auth/register',
   },
   transaction: '/transactions',
+  users: '/users',
   master: {
     coa: {
       root: '/master/coa',

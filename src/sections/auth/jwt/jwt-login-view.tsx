@@ -121,7 +121,13 @@ export default function JwtLoginView() {
       {renderHead}
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        Use username : <strong>admin</strong> / password :<strong> admin1</strong>
+        For Admin Use
+        Use username : <strong>admin</strong> / password :<strong> admin123</strong>
+      </Alert>
+
+      <Alert severity="info" sx={{ mb: 3 }}>
+        For User Use
+        Use username : <strong>fauzan</strong> / password :<strong> qwerty</strong>
       </Alert>
 
       {renderForm}

@@ -21,6 +21,7 @@ import useCreateTransaction from '../api/useTransaction';
 import { DUE_DATE_OPTIONS, TransactionFormValues } from './utils';
 import RHFAutocomplete from 'src/components/hook-form/rhf-auto-complete';
 import { useSnackbar } from 'src/components/snackbar';
+import { paths } from 'src/routes/paths';
 
 // ----------------------------------------------------------------------
 
@@ -124,7 +125,9 @@ export default function FormPembelian({ isEdit, currentData }: Props) {
   }, [
     JSON.stringify(values.products), // Re-calc jika produk berubah
     values.id_ppn_fk, 
-    values.id_pph_fk
+    values.id_pph_fk,
+    ppnOptions,
+    pphOptions
   ]); 
 
   useEffect(() => {
@@ -231,13 +234,20 @@ export default function FormPembelian({ isEdit, currentData }: Props) {
         }))
       };
 
-      // Kirim ke API
-      await createTransaction(payload as any);
-      
-      enqueueSnackbar(`Pembelian Berhasil Disimpan!\nTotal: ${formatCurrency(data.total_transaksi)} \n Silahkan Buka Dashboard atau Laporan`, { variant: 'success' });
-      // navigate('/dashboard/pembelian'); // Redirect jika perlu
-      reset(); // Reset form
+      if (isEdit && currentData?.id_transaksi) {
+        const safeId = encodeURIComponent(currentData.id_transaksi as string); 
 
+        await updateTransaction(payload as any, safeId);
+        enqueueSnackbar('Pembelian Berhasil Diperbarui!', { variant: 'success' });
+      } else {
+        // --- MODE CREATE ---
+        await createTransaction(payload as any); // Sesuaikan jika perlu
+        enqueueSnackbar('Pembelian Berhasil Disimpan!', { variant: 'success' });
+        reset();
+      }
+
+      navigate(paths.dashboard.one);
+      
     } catch (error) {
       console.error(error);
       enqueueSnackbar('Gagal menyimpan data pembelian.', { variant: 'error' });

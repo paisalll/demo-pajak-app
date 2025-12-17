@@ -21,6 +21,7 @@ import useCreateTransaction from '../api/useTransaction';
 import { DUE_DATE_OPTIONS, TransactionFormValues } from './utils';
 import RHFAutocomplete from 'src/components/hook-form/rhf-auto-complete';
 import { useSnackbar } from 'src/components/snackbar';
+import { paths } from 'src/routes/paths';
 
 // ----------------------------------------------------------------------
 
@@ -126,7 +127,9 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
   }, [
     JSON.stringify(values.products), // Re-calc jika produk berubah
     values.id_ppn_fk, 
-    values.id_pph_fk
+    values.id_pph_fk,
+    pphOptions,
+    ppnOptions
   ]); 
 
   useEffect(() => {
@@ -161,6 +164,7 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
       setValue('no_faktur', currentData.no_faktur || '');
       setValue('nama_proyek', currentData.nama_proyek || '');
       setValue('pengaju', currentData.pengaju || '');
+      setValue('nama_sales', currentData.nama_sales || '');
 
       // 2. Set Akun & Pajak
       // Kita perlu cari ID akun dari jurnal. Logic-nya:
@@ -211,6 +215,7 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
       // Trigger perhitungan total akan otomatis jalan karena useEffect Calculation (dependensi values)
     }
   }, [isEdit, currentData, setValue]);
+
   // 4. Submit Handler
   const onSubmit = async (data: TransactionFormValues) => {
     try {
@@ -233,13 +238,20 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
         }))
       };
 
-      // Kirim ke API
-      await createTransaction(payload as any);
-      
-      enqueueSnackbar(`Penjualan Berhasil Disimpan!\nTotal: ${formatCurrency(data.total_transaksi)} \n Silahkan Buka Dashboard atau Laporan`, { variant: 'success' });
-      // navigate('/dashboard/pembelian'); // Redirect jika perlu
-      reset(); // Reset form
+      if (isEdit && currentData?.id_transaksi) {
+        const safeId = encodeURIComponent(currentData.id_transaksi as string); 
 
+        await updateTransaction(payload as any, safeId);
+        enqueueSnackbar('Penjualan Berhasil Diperbarui!', { variant: 'success' });
+      } else {
+        // --- MODE CREATE ---
+        await createTransaction(payload as any); // Sesuaikan jika perlu
+        enqueueSnackbar('Penjualan Berhasil Disimpan!', { variant: 'success' });
+        reset();
+      }
+
+      navigate(paths.dashboard.one);
+      
     } catch (error) {
       console.error(error);
       enqueueSnackbar('Gagal menyimpan data penjualan.', { variant: 'error' });

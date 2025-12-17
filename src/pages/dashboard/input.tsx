@@ -8,7 +8,7 @@ export default function Page() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Two</title>
+        <title> Dashboard: Input Transaksi</title>
       </Helmet>
 
       <TwoView />

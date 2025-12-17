@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 // auth
-import { AuthGuard } from 'src/auth/guard';
+import { AuthGuard, RoleBasedGuard } from 'src/auth/guard';
 // layouts
 import DashboardLayout from 'src/layouts/dashboard';
 // components
@@ -9,12 +9,13 @@ import { LoadingScreen } from 'src/components/loading-screen';
 
 // ----------------------------------------------------------------------
 
-const IndexPage = lazy(() => import('src/pages/dashboard/one'));
-const PageTwo = lazy(() => import('src/pages/dashboard/two'));
-const PageThree = lazy(() => import('src/pages/dashboard/three'));
-const PageFour = lazy(() => import('src/pages/dashboard/four'));
-const PageFive = lazy(() => import('src/pages/dashboard/five'));
-const PageSix = lazy(() => import('src/pages/dashboard/six'));
+const IndexPage = lazy(() => import('src/pages/dashboard/dashboard'));
+const InputPage = lazy(() => import('src/pages/dashboard/input'));
+const CoaPage = lazy(() => import('src/pages/dashboard/coa'));
+const UserPage = lazy(() => import('src/pages/dashboard/user'));
+const VendorPage = lazy(() => import('src/pages/dashboard/vendor'));
+const CustomerPage = lazy(() => import('src/pages/dashboard/customer'));
+const TaxPage = lazy(() => import('src/pages/dashboard/tax'));
 
 // ----------------------------------------------------------------------
 
@@ -34,17 +35,28 @@ export const dashboardRoutes = [
       { element: <IndexPage />, index: true },
       { path: 'input', 
         children: [
-          { element: <PageTwo />, index: true },
-          { path: 'detail/:id', element: <PageTwo /> },
+          { element: <InputPage />, index: true },
+          { path: 'detail/:id', element: <InputPage /> },
         ],
       },
-      { path: 'coa', element: <PageThree /> },
-      {
-        path: 'group',
+      { path: 'coa', 
         children: [
-          { element: <PageFour />, index: true },
-          { path: 'five', element: <PageFive /> },
-          { path: 'six', element: <PageSix /> },
+          { element: <CoaPage />, index: true },
+        ],
+      },
+      {
+        path: 'master',
+        // Bungkus children master dengan Guard
+        element: (
+          <RoleBasedGuard hasContent roles={['admin']}>
+            <Outlet /> {/* Atau wrapper master layout */}
+          </RoleBasedGuard>
+        ),
+        children: [
+          { path: 'users', element: <UserPage /> },
+          { path: 'vendor', element: <VendorPage /> },
+          { path: 'customer', element: <CustomerPage /> },
+          { path: 'tax', element: <TaxPage /> },
         ],
       },
     ],
