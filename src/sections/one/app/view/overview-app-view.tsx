@@ -146,6 +146,36 @@ export default function OverViewDashboard() {
       )
     },
     {
+      field: 'nama_proyek',
+      headerName: 'Nama Proyek',
+      width: 200,
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack>
+          <Typography variant="body2" fontWeight="bold">{params.row.nama_proyek}</Typography>
+        </Stack>
+      )
+    },
+    {
+      field: 'pengaju',
+      headerName: 'Nama Pengaju',
+      width: 200,
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack>
+          <Typography variant="body2" fontWeight="bold">{params.row.pengaju}</Typography>
+        </Stack>
+      )
+    },
+    {
+      field: 'nama_sales',
+      headerName: 'Nama Sales',
+      width: 200,
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack>
+          <Typography variant="body2" fontWeight="bold">{params.row.nama_sales}</Typography>
+        </Stack>
+      )
+    },
+    {
       field: 'transaksi_jurnal',
       headerName: 'Akun COA',
       flex: 1.5, // Beri porsi lebih besar karena isinya banyak text
@@ -166,7 +196,7 @@ export default function OverViewDashboard() {
       renderCell: (params: GridRenderCellParams) => (
         <Stack>
           {params.row.transaksi_jurnal
-            ?.filter((item: any) => item.posisi === 'kredit') 
+            ?.filter((item: any) => item.posisi === 'debit') 
             .map((item: any) => (
               <Typography key={item.id_jurnal} variant="body2" noWrap>
                 {item.m_coa?.id_coa} - {item.m_coa?.nama_akun}
