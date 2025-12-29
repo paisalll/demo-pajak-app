@@ -38,6 +38,7 @@ import Scrollbar from 'src/components/scrollbar';
 import { Divider } from '@mui/material';
 import InvoiceAnalytic from '../invoice-analytic';
 import { paths } from 'src/routes/paths';
+import RenderStatus from '../render-status';
 
 // ----------------------------------------------------------------------
 
@@ -141,7 +142,7 @@ export default function OverViewDashboard() {
       width: 200,
       renderCell: (params: GridRenderCellParams) => (
         <Stack>
-          <Typography variant="body2" fontWeight="bold">{params.row.m_company?.nama_perusahaan}</Typography>
+          <Typography variant="body2" fontWeight="bold">{params.row.m_partner?.nama_partner}</Typography>
         </Stack>
       )
     },
@@ -241,12 +242,11 @@ export default function OverViewDashboard() {
       headerName: 'Status',
       width: 130,
       renderCell: (params: GridRenderCellParams) => (
-        <Label
-          variant="soft"
-          color={params.value === 1 ? 'success' : 'error'}
-        >
-          {params.value === 1 ? 'Paid' : 'Unpaid'}
-        </Label>
+        <RenderStatus 
+            id={params.row.id_transaksi} // Pastikan field ID benar (id_transaksi)
+            status={params.value}
+            onSuccess={fetchData} // <--- Pass fungsi refresh disini
+        />
       ),
     },
     {

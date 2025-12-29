@@ -22,6 +22,7 @@ import { DUE_DATE_OPTIONS, TransactionFormValues } from './utils';
 import RHFAutocomplete from 'src/components/hook-form/rhf-auto-complete';
 import { useSnackbar } from 'src/components/snackbar';
 import { paths } from 'src/routes/paths';
+import QuickAddVendorDialog from './QuickAddVendorDialog';
 
 // ----------------------------------------------------------------------
 
@@ -42,11 +43,10 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
   
   // 1. Hooks API
   const { createTransaction, updateTransaction, isLoading: isSubmittingAPI } = useCreateTransaction();
-  const { companies, coaOptions, ppnOptions, pphOptions } = useMasterData(); // Ambil data master
+  const { partners, coaOptions, ppnOptions, pphOptions, fetchMasterData } = useMasterData(); // Ambil data master
 
   // State untuk Tambah Vendor Cepat (Optional)
   const [openAddVendor, setOpenAddVendor] = useState(false);
-  const [newVendorName, setNewVendorName] = useState('');
 
   const methods = useForm<TransactionFormValues>({
     defaultValues: {
@@ -56,7 +56,6 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
       due_date: 30,
       tanggal_invoice: new Date(),
       tanggal_jatuh_tempo: new Date(),
-      no_invoice: '',
       no_faktur: '',
       
       nama_proyek: '',
@@ -150,8 +149,8 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
     if (isEdit && currentData) {
       
       // 1. Set Header Fields
-      setValue('type', 'pembelian'); // Pastikan tipe benar
-      setValue('id_company', currentData.m_company?.id_company || ''); // ID Vendor
+      setValue('type', 'penjualan'); // Pastikan tipe benar
+      setValue('id_partner', currentData.m_partner?.id_partner || ''); // ID Customer
       
       // Tanggal (Convert string ISO ke Date object)
       setValue('tanggal_pencatatan', currentData.tanggal_pencatatan ? new Date(currentData.tanggal_pencatatan) : new Date());
@@ -160,7 +159,7 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
       setValue('due_date', currentData.due_date || 30);
 
       // Info Faktur
-      setValue('no_invoice', currentData.no_invoice || '');
+      // setValue('no_invoice', currentData.no_invoice || '');
       setValue('no_faktur', currentData.no_faktur || '');
       setValue('nama_proyek', currentData.nama_proyek || '');
       setValue('pengaju', currentData.pengaju || '');
@@ -258,6 +257,11 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
     }
   };
 
+  const handleSuccessAddVendor = (newId: string) => {
+    setValue('id_partner', newId);
+
+    fetchMasterData(); 
+  }
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Grid container spacing={3}>
@@ -304,12 +308,12 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
                 />
                 
                 {/* No Dokumen */}
-                <RHFTextField name="no_invoice" label="No. Invoice Customer" placeholder="INV-..." />
+                {/* <RHFTextField name="no_invoice" label="No. Invoice Customer" placeholder="INV-..." /> */}
                 <RHFTextField name="no_faktur" label="No. Faktur Pajak" placeholder="010..." />
                 <RHFAutocomplete
-                  name="id_company"
+                  name="id_partner"
                   label="Customer *"
-                  options={companies}
+                  options={partners}
                   onAddNew={() => setOpenAddVendor(true)} // Menyalakan fitur tambah baru
                   addNewLabel="Tambah Customer Baru"
                 />
@@ -406,27 +410,12 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
 
       </Grid>
 
-      {/* --- DIALOG TAMBAH VENDOR (Dummy Logic) --- */}
-      <Dialog open={openAddVendor} onClose={() => setOpenAddVendor(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Tambah Vendor Baru</DialogTitle>
-        <DialogContent>
-            <Box sx={{ mt: 1 }}>
-                <TextField
-                    autoFocus fullWidth
-                    label="Nama Vendor"
-                    value={newVendorName}
-                    onChange={(e) => setNewVendorName(e.target.value)}
-                />
-            </Box>
-        </DialogContent>
-        <DialogActions>
-            <Button onClick={() => setOpenAddVendor(false)}>Batal</Button>
-            <Button variant="contained" onClick={() => {
-                alert('Fitur tambah vendor via modal belum connect API :)');
-                setOpenAddVendor(false);
-            }}>Simpan</Button>
-        </DialogActions>
-      </Dialog>
+      <QuickAddVendorDialog 
+          open={openAddVendor}
+          onClose={() => setOpenAddVendor(false)}
+          onSuccess={handleSuccessAddVendor} 
+          type="Customer"
+       />
 
     </FormProvider>
   );

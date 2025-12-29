@@ -33,23 +33,23 @@ const GREY = {
   900: '#161C24',
 };
 
-const PRIMARY = {
-  lighter: '#C8FAD6',
-  light: '#5BE49B',
-  main: '#00A76F',
-  dark: '#007867',
-  darker: '#004B50',
-  contrastText: '#FFFFFF',
-};
+  const PRIMARY = {
+    lighter: '#D6E4F0', // Biru sangat muda (soft sky)
+    light: '#6FA5D1',   // Biru cerah
+    main: '#3270A9',    // Biru utama
+    dark: '#235382',    // Biru tua
+    darker: '#123354',  // Navy
+    contrastText: '#FFFFFF',
+  };
 
-const SECONDARY = {
-  lighter: '#EFD6FF',
-  light: '#C684FF',
-  main: '#8E33FF',
-  dark: '#5119B7',
-  darker: '#27097A',
-  contrastText: '#FFFFFF',
-};
+  const SECONDARY = {
+    lighter: '#FCE0D5', // Peach muda
+    light: '#F49C72',   // Orange coral lembut
+    main: '#EE6B2E',    // Orange utama
+    dark: '#AA471D',    // Burnt orange
+    darker: '#6B280E',  // Coklat kemerahan tua
+    contrastText: '#FFFFFF',
+  };
 
 const INFO = {
   lighter: '#CAFDF5',

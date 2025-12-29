@@ -45,7 +45,7 @@ export function useNavData() {
             },
             {
               title: 'Master',
-              path: paths.dashboard.master.root,
+              path: paths.dashboard.master.users,
               roles: ['admin'],
               icon: ICONS.label,
               children: [

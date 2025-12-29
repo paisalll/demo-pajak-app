@@ -10,7 +10,7 @@ import { bgBlur } from 'src/theme/css';
 import { useOffSetTop } from 'src/hooks/use-off-set-top';
 import { useResponsive } from 'src/hooks/use-responsive';
 // components
-import Logo from 'src/components/logo';
+import LogoFull from 'src/components/logo-full';
 import SvgColor from 'src/components/svg-color';
 import { useSettingsContext } from 'src/components/settings';
 //
@@ -24,6 +24,7 @@ import {
   NotificationsPopover,
 } from '../_common';
 import { useAuthContext } from 'src/auth/hooks/use-auth-context';
+import Logo from 'src/components/logo';
 
 // ----------------------------------------------------------------------
 

@@ -12,7 +12,7 @@ export interface LogoProps extends BoxProps {
   disabledLink?: boolean;
 }
 
-const Logo = forwardRef<HTMLDivElement, LogoProps>(
+const LogoFull = forwardRef<HTMLDivElement, LogoProps>(
   ({ disabledLink = false, sx, ...other }, ref) => {
     const theme = useTheme();
 
@@ -27,7 +27,7 @@ const Logo = forwardRef<HTMLDivElement, LogoProps>(
     const logo = (
       <Box
         component="img"
-        src="/logo/logo.svg"
+        src="/logo/adana-logo.png"
         sx={{ width: 40, height: 40, cursor: 'pointer', ...sx }}
       />
     );
@@ -92,4 +92,4 @@ const Logo = forwardRef<HTMLDivElement, LogoProps>(
   }
 );
 
-export default Logo;
+export default LogoFull;
