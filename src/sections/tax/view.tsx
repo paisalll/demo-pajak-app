@@ -104,11 +104,21 @@ export default function TaxListView() {
     },
     {
       field: 'coa_keluaran', headerName: 'Akun PPN Keluaran (Jual)', flex: 1, minWidth: 200,
-      valueGetter: (params: any) => params?.row?.coa_keluaran ? `${params?.row?.coa_keluaran.id_coa} - ${params?.row?.coa_keluaran.nama_akun}` : '-'
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack>
+          <Typography variant="body2" fontWeight="bold">{params.row?.coa_keluaran?.id_coa}</Typography>
+          <Typography variant="caption" color="text.secondary">{params.row.coa_keluaran?.nama_akun}</Typography>
+        </Stack>
+      )
     },
     {
       field: 'coa_masukan', headerName: 'Akun PPN Masukan (Beli)', flex: 1, minWidth: 200,
-      valueGetter: (params: any) => params?.row?.coa_masukan ? `${params?.row?.coa_masukan.id_coa} - ${params?.row?.coa_masukan.nama_akun}` : '-'
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack>
+          <Typography variant="body2" fontWeight="bold">{params.row?.coa_masukan?.id_coa}</Typography>
+          <Typography variant="caption" color="text.secondary">{params.row.coa_masukan?.nama_akun}</Typography>
+        </Stack>
+      )
     },
     {
       field: 'actions', type: 'actions', headerName: 'Aksi', width: 100,
@@ -128,12 +138,22 @@ export default function TaxListView() {
     },
     { field: 'jenis_pph', headerName: 'Jenis PPh', width: 150 },
     {
-      field: 'coa_penjualan', headerName: 'Akun Saat Penjualan', flex: 1, minWidth: 200,
-      valueGetter: (params: any) => params?.row?.coa_penjualan ? `${params?.row?.coa_penjualan.id_coa} - ${params?.row?.coa_penjualan.nama_akun}` : '-'
+      field: 'coa_penjualan_pph', headerName: 'Akun Saat Penjualan', flex: 1, minWidth: 200,
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack>
+          <Typography variant="body2" fontWeight="bold">{params.row?.coa_penjualan?.id_coa}</Typography>
+          <Typography variant="caption" color="text.secondary">{params.row?.coa_penjualan ?.nama_akun}</Typography>
+        </Stack>
+      )
     },
     {
       field: 'coa_pembelian', headerName: 'Akun Saat Pembelian', flex: 1, minWidth: 200,
-      valueGetter: (params: any) => params?.row.coa_pembelian ? `${params?.row?.coa_pembelian.id_coa} - ${params?.row?.coa_pembelian.nama_akun}` : '-'
+      renderCell: (params: GridRenderCellParams) => (
+        <Stack>
+          <Typography variant="body2" fontWeight="bold">{params.row?.coa_pembelian?.id_coa}</Typography>
+          <Typography variant="caption" color="text.secondary">{params.row.coa_pembelian?.nama_akun}</Typography>
+        </Stack>
+      )
     },
     {
       field: 'actions', type: 'actions', headerName: 'Aksi', width: 100,
@@ -174,9 +194,16 @@ export default function TaxListView() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Convert Rate Percent ke Decimal (11 -> 0.11)
-      const payload = { ...formData, rate: Number(formData.rate) / 100 };
-      
+      const payload: any = { ...formData, rate: Number(formData.rate) / 100 };
+
+      delete payload.coa_keluaran;    // Relasi PPN
+      delete payload.coa_masukan;     // Relasi PPN
+      delete payload.coa_penjualan;   // Relasi PPh
+      delete payload.coa_pembelian;   // Relasi PPh
+      delete payload.transaksi_pajak; // Relasi Balik
+      delete payload.id_ppn;
+      delete payload.id_pph;
+
       const endpoint = currentTab === 'ppn' ? endpoints.master.ppn.root : endpoints.master.pph.root;
       const id = currentTab === 'ppn' ? formData.id_ppn : formData.id_pph;
 
@@ -187,6 +214,7 @@ export default function TaxListView() {
         await axios.post(endpoint, payload);
         enqueueSnackbar(`${currentTab.toUpperCase()} baru berhasil dibuat!`);
       }
+      
       fetchData();
       handleCloseForm();
     } catch (error) {
