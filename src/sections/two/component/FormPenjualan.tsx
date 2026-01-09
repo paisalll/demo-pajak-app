@@ -335,13 +335,13 @@ export default function FormPenjualan({ isEdit, currentData }: Props) {
                 <Stack spacing={3}>
                   <RHFAutocomplete
                     name="id_akun_debit"
-                    label="Akun Debit *"
+                    label="Akun Debit (Kas/Piutang)*"
                     options={coaOptions}
                   />
 
                   <RHFAutocomplete
                     name="id_akun_kredit"
-                    label="Akun Kredit *"
+                    label="Akun Kredit (Pendapatan Jasa)"
                     options={coaOptions}
                   />
 

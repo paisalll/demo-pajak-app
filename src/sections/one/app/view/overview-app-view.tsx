@@ -17,11 +17,13 @@ import Tabs from '@mui/material/Tabs';
 import { 
   DataGrid, 
   GridColDef, 
-  GridToolbar, 
+  Toolbar, 
   GridPaginationModel,
   GridActionsCellItem,
   GridRowParams,
   GridRenderCellParams,
+  GridToolbarContainer,
+  GridToolbarQuickFilter
 } from '@mui/x-data-grid';
 
 // components
@@ -39,6 +41,7 @@ import { Divider } from '@mui/material';
 import InvoiceAnalytic from '../invoice-analytic';
 import { paths } from 'src/routes/paths';
 import RenderStatus from '../render-status';
+import { CustomToolbar } from '../toolbar';
 
 // ----------------------------------------------------------------------
 
@@ -183,8 +186,8 @@ export default function OverViewDashboard() {
       minWidth: 400,
       renderCell: (params: GridRenderCellParams) => (
         <Stack>
-          {params.value?.map((item: any) => (
-            <Typography key={item.id_akun} variant="body2">{item.m_coa?.id_coa} -{item.m_coa?.nama_akun}</Typography>
+          {params.value?.map((item: any, index: number) => (
+            <Typography key={index} variant="body2">{item.m_coa?.id_coa} -{item.m_coa?.nama_akun}</Typography>
           ))}
         </Stack>
       )
@@ -297,6 +300,16 @@ export default function OverViewDashboard() {
       headerName: 'Aksi',
       width: 100,
       getActions: (params: GridRowParams) => [
+        <GridActionsCellItem
+          key="pdf"
+          icon={<Iconify icon="solar:printer-minimalistic-bold" color="info.main" />}
+          label="Cetak Invoice"
+          title="Download PDF" // Tooltip saat hover
+          onClick={() => {
+            const safeId = encodeURIComponent(params.row.id_transaksi);
+             window.open(`${import.meta.env.VITE_HOST_API}/reports/pdf/${safeId}`, '_blank');
+          }}
+        />,
         <GridActionsCellItem
           icon={<Iconify icon="solar:trash-bin-minimalistic-bold" />}
           label="Delete"
@@ -603,30 +616,21 @@ export default function OverViewDashboard() {
                 onPaginationModelChange={setPaginationModel}
                 pageSizeOptions={[5, 10, 25, 50]}
                 
-                // Toolbar
-                slots={{ toolbar: GridToolbar }}
-                slotProps={{
-                    toolbar: {
-                      showQuickFilter: true,
-                      quickFilterProps: { debounceMs: 500 }, // Delay search agar tidak spam API (opsional)
-                      printOptions: { disableToolbarButton: false }, // Pastikan tombol print muncul
-                      csvOptions: { disableToolbarButton: false }, // Pastikan tombol CSV muncul
-                      
-                      // Logic CSS untuk Search Kanan & Tombol Kiri
-                      sx: {
-                          p: 2,
-                          // Selector class untuk Quick Filter
-                          '& .MuiDataGrid-toolbarQuickFilter': {
-                              marginLeft: 'auto', // Dorong ke kanan mentok
-                              width: 250 // Lebar search bar
-                          }
-                      } // Search Bar bawaan DataGrid (Client side search)
-                    },
+                filterMode="server" 
+
+                onFilterModelChange={(newFilterModel) => {
+                    const searchValue = newFilterModel.quickFilterValues?.[0] || '';
+                    
+                    if (searchValue !== filters.name) {
+                        setFilters(prev => ({ ...prev, name: searchValue }));
+                        setPaginationModel(prev => ({ ...prev, page: 0 })); 
+                    }
                 }}
 
-                // Styling
-                disableRowSelectionOnClick
-            />
+                slots={{
+                    toolbar: CustomToolbar,
+                }}
+              />
         </Box>
       </Card>
       

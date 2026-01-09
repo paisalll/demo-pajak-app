@@ -333,13 +333,13 @@ export default function FormPembelian({ isEdit, currentData }: Props) {
                 <Stack spacing={3}>
                   <RHFAutocomplete
                     name="id_akun_debit"
-                    label="Akun Debit *"
+                    label="Akun Debit (Biaya Operasional)*"
                     options={coaOptions}
                   />
 
                   <RHFAutocomplete
                     name="id_akun_kredit"
-                    label="Akun Kredit *"
+                    label="Akun Kredit (Kas/Hutang)*"
                     options={coaOptions}
                   />
 
